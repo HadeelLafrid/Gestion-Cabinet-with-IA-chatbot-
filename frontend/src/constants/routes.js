@@ -1,0 +1,18 @@
+export const ROUTES = {
+  LOGIN: '/login',
+  REGISTER: '/register',
+  FORGOT_PASSWORD: '/forgot-password',
+  RESET_PASSWORD: '/reset-password',
+  DASHBOARD: '/',
+  PATIENTS: '/patients',
+  PATIENT_DETAILS: '/patients/:id',
+  ADD_PATIENT: '/patients/add',
+  CONSULTATION: '/consultation/:patientId',
+  APPOINTMENTS: '/appointments',
+  ADD_APPOINTMENT: '/appointments/add',
+  PAYMENTS: '/payments',
+  PROFILE: '/profile',
+  CONTACT:          '/contact',
+  EDIT_PROFILE: '/profile/edit',
+  CONSULTATION_ARCHIVE: '/consultations/archive',
+}
