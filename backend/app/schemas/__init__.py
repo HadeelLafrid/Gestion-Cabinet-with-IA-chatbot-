@@ -1,0 +1,10 @@
+from .user_schema import UserCreate, UserUpdate, UserRead
+from .patient_schema import PatientCreate, PatientUpdate, PatientRead
+from .consultation_schema import ConsultationCreate, ConsultationUpdate, ConsultationRead
+from .medicine_schema import MedicineCreate, MedicineUpdate, MedicineRead
+from .consultation_medicine_schema import ConsultationMedicineCreate, ConsultationMedicineUpdate, ConsultationMedicineRead
+from .exam_schema import ExamCreate, ExamUpdate, ExamRead
+from .consultation_exam_schema import ConsultationExamCreate, ConsultationExamUpdate, ConsultationExamRead
+from .payment_schema import PaymentCreate, PaymentUpdate, PaymentRead
+from .ai_report_schema import AIReportCreate, AIReportUpdate, AIReportRead
+from .chat_message_schema import ChatMessageCreate, ChatMessageUpdate, ChatMessageRead
