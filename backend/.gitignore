@@ -1,0 +1,7 @@
+migrations/env.py
+migrations/versions/23724b51242f_initial_tables.py
+alembic.ini                                  
+requirements.txt
+server.py
+.gitignore
+.env                                         
