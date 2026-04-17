@@ -4,39 +4,31 @@ import { ROUTES } from '../../../constants/routes'
 import Step1PersonalInfo from '../components/PatientForm/Step1PersonalInfo'
 import Step2Medical from '../components/PatientForm/Step2Medical'
 import Step3Documents from '../components/PatientForm/Step3Documents'
+import Step4Consultation from '../components/PatientForm/Step4Consultation'
 
 const steps = [
-  { id: 1, label: 'Informations Personnelles', sub: 'Identité et contact' },
-  { id: 2, label: 'Consultation & Médical',    sub: 'Paramètres et antécédents' },
-  { id: 3, label: 'Documents & Notes',         sub: 'Pièces jointes et observations' },
+  { id: 1, label: 'Informations Personnelles', sub: 'Identité et contact'          },
+  { id: 2, label: 'Consultation & Médical',    sub: 'Paramètres et antécédents'    },
+  { id: 3, label: 'Documents & Notes',         sub: 'Pièces jointes et observations'},
+  { id: 4, label: 'Première Consultation',     sub: 'Motif, diagnostic, traitement' },
 ]
 
 export default function AddPatient() {
   const navigate = useNavigate()
   const [currentStep, setCurrentStep] = useState(1)
   const [form, setForm] = useState({
-    // Step 1
-    carteChifa:     '',
-    civilite:       'Mr',
-    nom:            '',
-    prenom:         '',
-    ageAns:         '',
-    ageMois:        '',
-    profession:     '',
-    sitFamiliale:   'Célibataire',
-    nbEnfants:      '0',
-    telephone:      '',
-    adresse:        '',
-    // Step 2
-    poids:          '',
-    taille:         '',
-    antecedentsPerso:    '',
-    antecedentsFamiliaux:'',
-    notes:          '',
-    // Step 3
-    documents:      [],
-    observations:   '',
-  })
+  // Step 1
+  carteChifa: '', civilite: 'Mr', nom: '', prenom: '',
+  ageAns: '', ageMois: '', profession: '', sitFamiliale: 'Célibataire',
+  nbEnfants: '0', telephone: '', adresse: '',
+  // Step 2
+  poids: '', taille: '', antecedentsPerso: '', antecedentsFamiliaux: '', notes: '',
+  // Step 3
+  documents: [], observations: '',
+  // Step 4
+  motif: '', observations_consult: '', diagnostic: '', severite: '',
+  medications: [], montant: '', modePaiement: 'especes', consultationNotes: '',
+})
 
   const updateForm = (fields) => setForm((prev) => ({ ...prev, ...fields }))
 
@@ -49,17 +41,18 @@ export default function AddPatient() {
     navigate(ROUTES.PATIENTS)
   }
 
-  const handleReset = () => {
-    setForm({
-      carteChifa: '', civilite: 'Mr', nom: '', prenom: '',
-      ageAns: '', ageMois: '', profession: '', sitFamiliale: 'Célibataire',
-      nbEnfants: '0', telephone: '', adresse: '',
-      poids: '', taille: '', antecedentsPerso: '',
-      antecedentsFamiliaux: '', notes: '',
-      documents: [], observations: '',
-    })
-    setCurrentStep(1)
-  }
+ const handleReset = () => {
+  setForm({
+    carteChifa: '', civilite: 'Mr', nom: '', prenom: '',
+    ageAns: '', ageMois: '', profession: '', sitFamiliale: 'Célibataire',
+    nbEnfants: '0', telephone: '', adresse: '',
+    poids: '', taille: '', antecedentsPerso: '', antecedentsFamiliaux: '', notes: '',
+    documents: [], observations: '',
+    motif: '', diagnostic: '', severite: '',
+    medications: [], montant: '', modePaiement: 'especes', consultationNotes: '',
+  })
+  setCurrentStep(1)
+}
 
   return (
     <div className="min-h-screen bg-[#f0f2f9]">
@@ -155,6 +148,9 @@ export default function AddPatient() {
             {currentStep === 3 && (
               <Step3Documents form={form} updateForm={updateForm} />
             )}
+            {currentStep === 4 && (
+  <Step4Consultation form={form} updateForm={updateForm} />
+)}
           </div>
 
           {/* Bottom action buttons */}
@@ -199,13 +195,13 @@ export default function AddPatient() {
         </div>
       </div>
 
-      {/* Floating Assistant IA button */}
+      {/* Floating Assistant IA button
       <button className="fixed bottom-6 left-72 flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-5 py-3 rounded-full shadow-lg transition-colors z-50">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
         </svg>
         Assistant IA
-      </button>
+      </button> */}
     </div>
   )
 }
