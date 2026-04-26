@@ -23,3 +23,4 @@ def authenticate_user(db: Session, username: str, password: str):
     if not verify_password(password, user.password):
         raise HTTPException(status_code=400, detail="Incorrect username or password")
     return user
+

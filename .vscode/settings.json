@@ -1,1 +1,4 @@
-{}
+{
+    "python.analysis.typeCheckingMode": "off"
+// or "basic" instead of "strict"
+}

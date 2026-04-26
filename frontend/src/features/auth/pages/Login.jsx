@@ -2,9 +2,10 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ROUTES } from '../../../constants/routes'
 import { useAuth } from '../../../hooks/useAuth'
+import apiClient from '../../../services/apiClient'
 
 export default function Login() {
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [remember, setRemember] = useState(false)
@@ -19,12 +20,14 @@ export default function Login() {
     setLoading(true)
     setError('')
     try {
-      // temporary mock — replace with real API call later
-      await new Promise((r) => setTimeout(r, 800))
-      login({ name: 'Dr. Jean Dupont', specialty: 'Cardiologue' }, 'mock-token-123')
+      const response = await apiClient.post('/auth/login', { username, password })
+      const { access_token, user } = response.data
+      login(user, access_token)
       navigate(ROUTES.DASHBOARD)
     } catch (err) {
-      setError('Email ou mot de passe incorrect.')
+      setError(
+        err.response?.data?.detail || 'Nom d\'utilisateur ou mot de passe incorrect.'
+      )
     } finally {
       setLoading(false)
     }
@@ -32,14 +35,9 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-[#eef0f8] flex flex-col items-center justify-center px-4">
-
-      {/* Top label */}
       <p className="absolute top-6 right-8 text-sm text-gray-500">Portail Clinique</p>
 
-      {/* Card */}
       <div className="bg-white rounded-2xl shadow-sm w-full max-w-md px-10 py-12">
-
-        {/* Title */}
         <h1 className="text-4xl font-bold text-gray-800 mb-2">Connexion</h1>
         <p className="text-gray-500 text-sm mb-8">Bienvenue au Portail Clinique.</p>
 
@@ -51,10 +49,10 @@ export default function Login() {
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
 
-          {/* Email */}
+          {/* Username — changed from email */}
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold text-gray-500 tracking-widest uppercase">
-              Adresse E-mail
+              Nom d'utilisateur
             </label>
             <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="1.8">
@@ -62,17 +60,17 @@ export default function Login() {
                 <path d="M2 7l10 7 10-7" />
               </svg>
               <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="nom@etablissement.fr"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="dr.benali"
                 required
                 className="flex-1 bg-transparent text-sm text-gray-600 placeholder-gray-300 outline-none"
               />
             </div>
           </div>
 
-          {/* Password */}
+          {/* Password — unchanged */}
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold text-gray-500 tracking-widest uppercase">
               Mot de passe
@@ -111,7 +109,6 @@ export default function Login() {
             </div>
           </div>
 
-          {/* Remember me + Forgot password */}
           <div className="flex items-center justify-between">
             <label className="flex items-center gap-2 cursor-pointer">
               <input
@@ -130,7 +127,6 @@ export default function Login() {
             </Link>
           </div>
 
-          {/* Submit */}
           <button
             type="submit"
             disabled={loading}
@@ -147,7 +143,6 @@ export default function Login() {
           </button>
         </form>
 
-        {/* Bottom link */}
         <p className="text-center text-sm text-gray-400 mt-8">
           Vous n'avez pas de compte ?{' '}
           <Link to={ROUTES.REGISTER} className="text-indigo-600 font-semibold hover:underline">

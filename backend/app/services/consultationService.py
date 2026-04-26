@@ -1,6 +1,6 @@
 from datetime import date
 from app.schemas.consultation_schema import ConsultationCreate
-from sqlmodel import Session, select
+from sqlmodel import Session, select, delete
 from app.models import (Consultation, Medicine, Exam, Payment,
                         ConsultationMedicine, ConsultationExam, Patient)
 from fastapi import HTTPException
@@ -179,19 +179,24 @@ def delete_consultation(db: Session, consultation_id: int):
     consultation = db.get(Consultation, consultation_id)
     if not consultation:
         return None
+
+    # delete related records first
+    db.exec(delete(ConsultationMedicine).where(ConsultationMedicine.consultation_id == consultation_id))
+    db.exec(delete(ConsultationExam).where(ConsultationExam.consultation_id == consultation_id))
+    db.exec(delete(Payment).where(Payment.consultation_id == consultation_id))
+
     db.delete(consultation)
     db.commit()
     return {"message": "Consultation deleted successfully"}
 
 
 def get_consultations(db: Session, skip: int = 0, limit: int = 100,
-                      patient_id: int = None, start_date: str = None,
-                      end_date: str = None, patient_search: str = None):
+                      patient_id: int = None, date: str = None, patient_search: str = None):
     query = select(Consultation)
     if patient_id:
-        query = query.where(Consultation.patient_id == patient_id)
-    if start_date and end_date:
-        query = query.where(Consultation.consultation_date.between(start_date, end_date))
+        query = query.where(Consultation.id == patient_id)
+    if date:
+        query = query.where(Consultation.consultation_date == date)
     if patient_search:
-        query = query.join(Patient).where(Patient.name.contains(patient_search))
+        query = query.join(Patient).where((Patient.first_name.contains(patient_search)) | (Patient.last_name.contains(patient_search)))
     return db.exec(query.offset(skip).limit(limit)).all()

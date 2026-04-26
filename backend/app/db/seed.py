@@ -29,7 +29,7 @@ def clear_all(session: Session):
 def seed(session: Session):
     # ── User (Doctor) ──────────────────────────────────────────
     doctor = User(
-        username="dr.benali",
+        username="dr.Hadil",
         password=hash_password("password123"),
         first_name="Karim",
         last_name="Benali",
