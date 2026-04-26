@@ -9,10 +9,16 @@ from typing import Any, Iterable
 
 import sqlalchemy as sa
 from sqlmodel import create_engine
-
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from app.core.config import settings
+
+import bcrypt
+
+def get_password_hash(password: str) -> str:
+    pwd_bytes = password.encode('utf-8')[:72]
+    return bcrypt.hashpw(pwd_bytes, bcrypt.gensalt()).decode('utf-8')
+
 
 
 def _split_tuples(values_block: str) -> list[str]:
@@ -193,10 +199,13 @@ def load_dump(dump_path: Path) -> None:
 
     patient_rows = list(iter_insert_rows(sql_text, "patient"))
     consultation_rows = list(iter_insert_rows(sql_text, "consultation"))
+    login_rows = list(iter_insert_rows(sql_text, "login"))
+    ordonnance_rows = list(iter_insert_rows(sql_text, "ordonnance"))
 
     patients_payload: list[dict[str, Any]] = []
     patient_ids: set[int] = set()
 
+    i = 1
     for row in patient_rows:
         patient_id = _to_int(row.get("ID"))
         if patient_id is None:
@@ -212,8 +221,8 @@ def load_dump(dump_path: Path) -> None:
         payload = {
             "id": patient_id,
             "chifa_card_number": _clean_str(row.get("CHIFA")),
-            "first_name": None,
-            "last_name": None,
+            "first_name": f"mohamed{i}",
+            "last_name": "Patient",
             "date_of_birth": None,
             "gender": _parse_gender(row.get("CIVIL")),
             "marital_status": _clean_str(row.get("SITUATION")),
@@ -233,6 +242,7 @@ def load_dump(dump_path: Path) -> None:
         }
         patients_payload.append(payload)
         patient_ids.add(patient_id)
+        i += 1
 
     consultations_payload: list[dict[str, Any]] = []
     payments_payload: list[dict[str, Any]] = []
@@ -273,7 +283,113 @@ def load_dump(dump_path: Path) -> None:
 
     engine = create_engine(settings.DATABASE_URL, echo=False)
 
+    users_payload: list[dict[str, Any]] = []
+    for row in login_rows:
+        user_id = _to_int(row.get("ID"))
+        if user_id is None:
+            continue
+        
+        raw_password = _clean_str(row.get("password")) or "1234"
+        hashed_password = get_password_hash(raw_password[:72])
+        
+        users_payload.append({
+            "id": user_id,
+            "username": _clean_str(row.get("login")),
+            "password": hashed_password,
+            "first_name": _clean_str(row.get("Prenom")) or "",
+            "last_name": _clean_str(row.get("Nom")) or "",
+            "email": _clean_str(row.get("mail")) or f"user{user_id}@example.com",
+            "phone": _clean_str(row.get("Tel")),
+            "specialization": _clean_str(row.get("Specialite")),
+            "medical_facility_address": _clean_str(row.get("Adresse")),
+            "created_at": datetime.utcnow()
+        })
+
+    medicines_dict: dict[str, int] = {}
+    medicines_payload: list[dict[str, Any]] = []
+    consultation_medicines_payload: list[dict[str, Any]] = []
+    next_med_id = 1
+    
+    for row in ordonnance_rows:
+        consultation_id = _to_int(row.get("ID_CONSULT"))
+        med_name = _clean_str(row.get("MEDICAMENT"))
+        
+        if consultation_id is None or med_name is None:
+            continue
+            
+        med_name_key = med_name.lower()
+        if med_name_key not in medicines_dict:
+            medicines_dict[med_name_key] = next_med_id
+            medicines_payload.append({
+                "id": next_med_id,
+                "name": med_name
+            })
+            next_med_id += 1
+            
+        med_id = medicines_dict[med_name_key]
+        
+        prise = _clean_str(row.get("PRISE"))
+        type_form = _clean_str(row.get("TYPE"))
+        dosage = (f"{prise} {type_form}").strip() if (prise or type_form) else None
+        
+        consultation_medicines_payload.append({
+            "consultation_id": consultation_id,
+            "medicine_id": med_id,
+            "dosage": dosage,
+            "duration": _clean_str(row.get("DUREE"))
+        })
+
     with engine.begin() as conn:
+        if users_payload:
+            conn.execute(
+                sa.text(
+                    """
+                    INSERT INTO users (
+                        id, username, password, first_name, last_name, email, phone,
+                        specialization, medical_facility_address, created_at
+                    ) VALUES (
+                        :id, :username, :password, :first_name, :last_name, :email, :phone,
+                        :specialization, :medical_facility_address, :created_at
+                    )
+                    ON CONFLICT (id) DO UPDATE SET
+                        username = EXCLUDED.username,
+                        password = EXCLUDED.password,
+                        first_name = EXCLUDED.first_name,
+                        last_name = EXCLUDED.last_name,
+                        email = EXCLUDED.email,
+                        phone = EXCLUDED.phone,
+                        specialization = EXCLUDED.specialization,
+                        medical_facility_address = EXCLUDED.medical_facility_address
+                    """
+                ),
+                users_payload,
+            )
+
+        if medicines_payload:
+            conn.execute(
+                sa.text(
+                    """
+                    INSERT INTO medicines (id, name) VALUES (:id, :name)
+                    ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name
+                    """
+                ),
+                medicines_payload,
+            )
+
+        if consultation_medicines_payload:
+            conn.execute(
+                sa.text(
+                    """
+                    INSERT INTO consultation_medicines (
+                        consultation_id, medicine_id, dosage, duration
+                    ) VALUES (
+                        :consultation_id, :medicine_id, :dosage, :duration
+                    )
+                    """
+                ),
+                consultation_medicines_payload,
+            )
+
         if patients_payload:
             conn.execute(
                 sa.text(
@@ -371,10 +487,28 @@ def load_dump(dump_path: Path) -> None:
                 "SELECT setval(pg_get_serial_sequence('payments', 'id'), COALESCE((SELECT MAX(id) FROM payments), 1), true)"
             )
         )
+        conn.execute(
+            sa.text(
+                "SELECT setval(pg_get_serial_sequence('users', 'id'), COALESCE((SELECT MAX(id) FROM users), 1), true)"
+            )
+        )
+        conn.execute(
+            sa.text(
+                "SELECT setval(pg_get_serial_sequence('medicines', 'id'), COALESCE((SELECT MAX(id) FROM medicines), 1), true)"
+            )
+        )
+        conn.execute(
+            sa.text(
+                "SELECT setval(pg_get_serial_sequence('consultation_medicines', 'id'), COALESCE((SELECT MAX(id) FROM consultation_medicines), 1), true)"
+            )
+        )
 
+    print(f"Imported {len(users_payload)} users")
     print(f"Imported {len(patients_payload)} patients")
     print(f"Imported {len(consultations_payload)} consultations")
     print(f"Imported {len(payments_payload)} payments")
+    print(f"Imported {len(medicines_payload)} medicines")
+    print(f"Imported {len(consultation_medicines_payload)} consultation medicines")
 
 
 def main() -> None:
