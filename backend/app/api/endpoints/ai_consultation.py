@@ -21,20 +21,12 @@ router = APIRouter()
 api_key = os.getenv("GROQ_API_KEY", "").strip().strip('"').strip("'")
 client = Groq(api_key=api_key) if api_key else None
 
-
-# =========================
-# 📦 INPUT SCHEMA
-# =========================
 class SymptomsInput(BaseModel):
     symptoms: str
     patient_id: Optional[int] = None
     age: Optional[int] = None
     gender: Optional[str] = None
 
-
-# =========================
-# 📦 OUTPUT SCHEMA (STRICT)
-# =========================
 class MedicineOut(BaseModel):
     name: str
     dosage: str
