@@ -16,7 +16,14 @@ app.add_middleware(
 app.include_router(consultationRoute.router)
 app.include_router(authenticationRoute.router)
 
+from fastapi import FastAPI
+from app.routes.patient_routes import router as patient_router  # ADD THIS
+
+app = FastAPI()
+
 
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
+
+app.include_router(patient_router)  
