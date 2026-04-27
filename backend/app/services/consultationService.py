@@ -4,6 +4,7 @@ from sqlmodel import Session, select, delete
 from app.models import (Consultation, Medicine, Exam, Payment,
                         ConsultationMedicine, ConsultationExam, Patient)
 from fastapi import HTTPException
+from sqlalchemy import func, cast, String
 
 
 def create_consultation(db: Session, data: ConsultationCreate) -> Consultation:
@@ -194,9 +195,78 @@ def get_consultations(db: Session, skip: int = 0, limit: int = 100,
                       patient_id: int = None, date: str = None, patient_search: str = None):
     query = select(Consultation)
     if patient_id:
-        query = query.where(Consultation.id == patient_id)
+        query = query.where(Consultation.patient_id == patient_id)
     if date:
-        query = query.where(Consultation.consultation_date == date)
+        query = query.where(func.date(Consultation.consultation_date) == date)
     if patient_search:
-        query = query.join(Patient).where((Patient.first_name.contains(patient_search)) | (Patient.last_name.contains(patient_search)))
-    return db.exec(query.offset(skip).limit(limit)).all()
+        if patient_search.isdigit():
+            query = query.join(Patient).where(
+                (Patient.id == int(patient_search))
+            )
+        else:
+            query = query.join(Patient).where(
+                (Patient.first_name.contains(patient_search)) |
+                (Patient.last_name.contains(patient_search)) 
+            )
+    consultations = db.exec(query.offset(skip).limit(limit)).all()
+    
+    if not consultations:
+        return []
+    
+    # Get unique patient IDs
+    patient_ids = {c.patient_id for c in consultations}
+    
+    # Fetch all patients at once
+    patients = db.exec(select(Patient).where(Patient.id.in_(patient_ids))).all()
+    patient_map = {p.id: p for p in patients}
+    
+    # Build response with patient info
+    result = []
+    for consultation in consultations:
+        patient = patient_map.get(consultation.patient_id)
+        result.append({
+            "id": consultation.id,
+            "consultation_date": consultation.consultation_date,
+            "motif": consultation.motif,
+            "clinical_observation": consultation.clinical_observation,
+            "diagnosis": consultation.diagnosis,
+            "severity": consultation.severity,
+            "additional_notes": consultation.additional_notes,
+            "created_at": consultation.created_at,
+            "patient": {
+                "id": patient.id,
+                "first_name": patient.first_name,
+                "last_name": patient.last_name,
+                "age": _calculate_age(patient.date_of_birth),
+                "gender": patient.gender,
+            }
+            if patient else None
+        })
+    
+    return result
+
+# since there is no direct link between patient and medicine table
+# we will fetch all consultations of the patient and get the medicines from there 
+def fetch_medicines(db: Session, patient_id: int):
+    consultations = db.exec(select(Consultation).where(Consultation.patient_id == patient_id)).all()
+    if not consultations:
+        return []
+    # Get unique medicine IDs
+    medicine_consultaions = db.exec(select(ConsultationMedicine).where(ConsultationMedicine.consultation_id.in_([c.id for c in consultations]))).all()
+    medicine_ids = {mc.medicine_id for mc in medicine_consultaions}
+    if not medicine_ids:
+        return []
+    medicines = db.exec(select(Medicine).where(Medicine.id.in_(medicine_ids))).all()
+    medicine_map = {m.id: m for m in medicines}
+    result = []
+    for mc in medicine_consultaions:
+        medicine = medicine_map.get(mc.medicine_id)
+        if medicine:
+            result.append({
+                "id": medicine.id,
+                "name": medicine.name,
+                "dosage": mc.dosage,
+                "duration": mc.duration,
+            })
+    return result
+    

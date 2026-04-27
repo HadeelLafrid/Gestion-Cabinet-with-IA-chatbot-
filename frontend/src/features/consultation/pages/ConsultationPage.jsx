@@ -39,7 +39,7 @@ export default function ConsultationSearch() {
     try {
       if (isNameSearch && !isDateSearch) {
         // search patients by name
-        const response = await apiClient.get('/patients/', { params: { search: query } })
+        const response = await apiClient.get('/api/v1/patients', { params: { search: query } })
         setPatients(response.data.data || [])
       } else if (isDateSearch) {
         // search consultations by date

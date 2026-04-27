@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { COMMON_MEDICINES, MEDICINE_CATEGORIES } from '../../../constants/medicines'
+import apiClient from '../../../services/apiClient'
 
 const MOCK_PATIENTS = {
   'PT-4401': { name: 'Lafrid hadil',  id: '4401-X', age: '42 ans', genre: 'Femme' },
@@ -12,16 +13,60 @@ const MOCK_PATIENTS = {
   'PT-4407': { name: 'Karim Benali',    id: '4407-X', age: '38 ans', genre: 'Homme' },
 }
 
-const MOCK_MEDICATIONS = [
-  { id: 1, name: 'Lisinopril 10mg',      instruction: '1 comprimé par jour - Le matin', icon: 'pill'  },
-  { id: 2, name: 'Bilan sanguin complet', instruction: 'À réaliser sous 72h à jeun',      icon: 'lab'   },
-]
 
 export default function NewConsultation() {
   const { patientId } = useParams()
   const navigate = useNavigate()
-  const patient  = MOCK_PATIENTS[patientId] || MOCK_PATIENTS['PT-4402']
   const panelRef = useRef(null)
+
+  const [patient, setPatient] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchPatient = async () => {
+      try {
+        const response = await apiClient.get(`/api/v1/patients/${patientId}`);
+        const p = response.data;
+        let age = 'N/A';
+        if (p.date_of_birth) {
+           const birthDate = new Date(p.date_of_birth);
+           const ageDifMs = Date.now() - birthDate.getTime();
+           const ageDate = new Date(ageDifMs);
+           age = Math.abs(ageDate.getUTCFullYear() - 1970) + ' ans';
+        }
+        setPatient({
+           ...p,
+           name: `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Inconnu',
+           age: age,
+           genre: p.gender === 'M' ? 'Homme' : p.gender === 'F' ? 'Femme' : p.gender || 'Non spécifié',
+           id: p.id
+        });
+
+        try {
+          const medsRes = await apiClient.get(`/consultations/medicines/${patientId}`);
+          if (medsRes.data) {
+            setMeds(medsRes.data.map(m => ({
+              id: m.id || Date.now() + Math.random(),
+              name: m.name,
+              instruction: m.dosage || '',
+              icon: 'pill'
+            })));
+          }
+        } catch (err) {
+          console.warn("Could not fetch medicines for patient or none found", err);
+        }
+      } catch (error) {
+        console.error("Error fetching patient", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (patientId) {
+      fetchPatient();
+    } else {
+      setLoading(false);
+    }
+  }, [patientId]);
 
   const [form, setForm] = useState({
     motif:         '',
@@ -33,7 +78,7 @@ export default function NewConsultation() {
     modePaiement: 'especes',
   })
   const [tags,   setTags]   = useState(['I10 - Hypertension'])
-  const [meds,   setMeds]   = useState(MOCK_MEDICATIONS)
+  const [meds,   setMeds]   = useState([])
   const [aiChat, setAiChat] = useState('')
   const [showMedForm, setShowMedForm] = useState(false)
   const [newMed,      setNewMed]      = useState({ name: '', instruction: '', icon: 'pill' })
@@ -64,6 +109,35 @@ export default function NewConsultation() {
     setNewMed({ name: '', instruction: '', icon: 'pill' })
     setShowMedForm(false)
   }
+
+  const handleSaveConsultation = async () => {
+    try {
+      const payload = {
+        patient_id: parseInt(patientId),
+        motif: form.motif,
+        clinical_observation: form.observations,
+        diagnosis: tags.join(', '),
+        severity: form.severite,
+        additional_notes: form.notes,
+        medicines: meds.filter(m => m.icon === 'pill').map(m => ({
+          medicine_name: m.name,
+          dosage: m.instruction
+        })),
+        exams: meds.filter(m => m.icon === 'lab').map(m => ({
+          exam_name: m.name,
+          notes: m.instruction
+        })),
+        payment: form.montant ? { amount: parseFloat(form.montant) } : null
+      };
+
+      await apiClient.post('/consultations/', payload);
+      // Generate resume after successful save
+      generateResume();
+    } catch (error) {
+      console.error("Error saving consultation", error);
+      alert("Erreur lors de l'enregistrement de la consultation.");
+    }
+  };
 
   // Generate resume based on consultation data
   const generateResume = async () => {
@@ -289,6 +363,22 @@ Comment puis-je vous aider à approfondir ce cas?`
       window.scrollTo({ top: 0, behavior: 'smooth' })
     }
   }, [showResumeModal])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (!patient) {
+    return (
+      <div className="flex items-center justify-center h-64 text-gray-500 font-medium">
+        Patient non trouvé
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-5">
@@ -757,7 +847,7 @@ Comment puis-je vous aider à approfondir ce cas?`
               Annuler
             </button>
             <button
-              onClick={generateResume}
+              onClick={handleSaveConsultation}
               className="px-8 py-3 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors flex items-center gap-2"
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

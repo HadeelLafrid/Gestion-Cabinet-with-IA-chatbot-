@@ -13,8 +13,7 @@ def get_consultations(
     limit: int = 100,
     patient_search: str = None,
     patient_id: int = None,
-    start_date: str = None,
-    end_date: str = None,
+    date: str = None,
     result=Depends(consultationController.get_consultations_controller)
 ):
     return result
@@ -29,4 +28,8 @@ def update_consultation(consultation_id: int, result=Depends(consultationControl
 
 @router.delete("/{consultation_id}", status_code=200)
 def delete_consultation(consultation_id: int, result=Depends(consultationController.delete_consultation_controller)):
+    return result
+
+@router.get("/medicines/{patient_id}", status_code=200)
+def get_medicines(patient_id: int, result=Depends(consultationController.get_medicines_controller)):
     return result
