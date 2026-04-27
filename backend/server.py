@@ -1,7 +1,7 @@
-from FASTAPI import FASTAPI
+from fastapi import FastAPI
+from app.routes.patient_routes import router as patient_router  # ADD THIS
 
-app = FASTAPI()
+app = FastAPI()
 
-@app.get("/")
-async def root():
-    return {"message": "Hello World"}
+
+app.include_router(patient_router)  
