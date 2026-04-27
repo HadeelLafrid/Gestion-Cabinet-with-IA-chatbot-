@@ -4,7 +4,6 @@ import { ROUTES } from '../../../constants/routes'
 import Step1PersonalInfo from '../components/PatientForm/Step1PersonalInfo'
 import Step2Medical from '../components/PatientForm/Step2Medical'
 import Step3Documents from '../components/PatientForm/Step3Documents'
-import Step4Consultation from '../components/PatientForm/Step4Consultation'
 
 const steps = [
   { id: 1, label: 'Informations Personnelles', sub: 'Identité et contact'          },
