@@ -1,27 +1,9 @@
 import { useNavigate, useParams } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ROUTES } from '../../../constants/routes'
+import apiClient from '../../../services/apiClient'
 
-const MOCK_PATIENT = {
-  id:               'WM-2024-8842',
-  carteChifa:       '0012 3456 7890 12',
-  civilite:         'Monsieur',
-  nom:              'Benali',
-  prenom:           'Amine',
-  age:              34,
-  poids:            78,
-  taille:           182,
-  sitFamiliale:     'Marié(e)',
-  nbEnfants:        2,
-  profession:       'Ingénieur Logiciel',
-  telephone:        '0550 12 34 56',
-  adresse:          '12 Rue des Oliviers, Alger Centre',
-  antecedentsPerso: 'Allergie à la pénicilline constatée en 2018.',
-  antecedentsFamiliaux: 'Hypertension paternelle.',
-  noteClinique:     'Patient très coopératif, mais présente une appréhension face aux aiguilles. Prévoir une anesthésie locale douce.',
-  dateCreation:     '14 Mars 2024',
-  lastUpdate:       'il y a 2 heures',
-}
+// Removed mock data
 
 function SectionHeader({ icon, title, color = 'bg-indigo-50 text-indigo-500' }) {
   return (
@@ -49,7 +31,67 @@ function FieldBox({ label, value, unit }) {
 export default function PatientDetails() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const [patient, setPatient] = useState(MOCK_PATIENT)
+  const [patient, setPatient] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchPatient = async () => {
+      try {
+        const response = await apiClient.get(`/api/v1/patients/${id}`);
+        const p = response.data;
+        let age = 'N/A';
+        if (p.date_of_birth) {
+           const birthDate = new Date(p.date_of_birth);
+           const ageDifMs = Date.now() - birthDate.getTime();
+           const ageDate = new Date(ageDifMs);
+           age = Math.abs(ageDate.getUTCFullYear() - 1970);
+        }
+        setPatient({
+           id: p.id,
+           carteChifa: p.chifa_card_number || 'Non renseigné',
+           civilite: p.gender === 'M' || p.gender === 'male' ? 'Monsieur' : p.gender === 'F' || p.gender === 'female' ? 'Madame' : 'Non spécifié',
+           nom: p.last_name || '',
+           prenom: p.first_name || '',
+           age: age,
+           poids: p.weight || null,
+           taille: p.height || null,
+           sitFamiliale: p.marital_status || 'Non renseigné',
+           nbEnfants: p.number_of_children || 0,
+           profession: p.profession || 'Non renseigné',
+           telephone: p.phone || 'Non renseigné',
+           adresse: p.address || 'Non renseigné',
+           antecedentsPerso: p.personal_history || 'Aucun antécédent personnel signalé.',
+           antecedentsFamiliaux: p.family_history || 'Aucun antécédent familial signalé.',
+           noteClinique: p.general_observation || 'Aucune note clinique.',
+           dateCreation: p.created_at ? new Date(p.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'N/A',
+           lastUpdate: p.created_at ? new Date(p.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'N/A',
+        });
+      } catch (error) {
+        console.error("Error fetching patient", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (id) {
+      fetchPatient();
+    }
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (!patient) {
+    return (
+      <div className="flex items-center justify-center h-64 text-gray-500 font-medium">
+        Patient non trouvé
+      </div>
+    );
+  }
 
   const imc = patient.poids && patient.taille
     ? (patient.poids / Math.pow(patient.taille / 100, 2)).toFixed(1)

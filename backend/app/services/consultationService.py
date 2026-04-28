@@ -246,18 +246,31 @@ def get_consultations(db: Session, skip: int = 0, limit: int = 100,
     return result
 
 # since there is no direct link between patient and medicine table
-# we will fetch all consultations of the patient and get the medicines from there 
+# we will fetch the latest consultation of the patient and get the medicines from there 
 def fetch_medicines(db: Session, patient_id: int):
-    consultations = db.exec(select(Consultation).where(Consultation.patient_id == patient_id)).all()
-    if not consultations:
+    # Fetch the most recent consultation for the patient
+    latest_consultation = db.exec(
+        select(Consultation)
+        .where(Consultation.patient_id == patient_id)
+        .order_by(Consultation.consultation_date.desc(), Consultation.id.desc())
+    ).first()
+    
+    if not latest_consultation:
         return []
-    # Get unique medicine IDs
-    medicine_consultaions = db.exec(select(ConsultationMedicine).where(ConsultationMedicine.consultation_id.in_([c.id for c in consultations]))).all()
+        
+    # Get medicine IDs from the latest consultation
+    medicine_consultaions = db.exec(
+        select(ConsultationMedicine)
+        .where(ConsultationMedicine.consultation_id == latest_consultation.id)
+    ).all()
+    
     medicine_ids = {mc.medicine_id for mc in medicine_consultaions}
     if not medicine_ids:
         return []
+        
     medicines = db.exec(select(Medicine).where(Medicine.id.in_(medicine_ids))).all()
     medicine_map = {m.id: m for m in medicines}
+    
     result = []
     for mc in medicine_consultaions:
         medicine = medicine_map.get(mc.medicine_id)
@@ -269,4 +282,3 @@ def fetch_medicines(db: Session, patient_id: int):
                 "duration": mc.duration,
             })
     return result
-    

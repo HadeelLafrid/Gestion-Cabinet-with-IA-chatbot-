@@ -4,6 +4,8 @@ import { ROUTES } from '../../../constants/routes'
 import Step1PersonalInfo from '../components/PatientForm/Step1PersonalInfo'
 import Step2Medical from '../components/PatientForm/Step2Medical'
 import Step3Documents from '../components/PatientForm/Step3Documents'
+
+
 const steps = [
   { id: 1, label: 'Informations Personnelles', sub: 'Identité et contact'          },
   { id: 2, label: 'Consultation & Médical',    sub: 'Paramètres et antécédents'    },
@@ -34,10 +36,34 @@ export default function AddPatient() {
     ? (parseFloat(form.poids) / Math.pow(parseFloat(form.taille) / 100, 2)).toFixed(1)
     : null
 
-  const handleSave = () => {
-    console.log('Patient data:', form)
+  const handleSave = async () => {
+  const response = await fetch('http://localhost:8000/api/v1/patients/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      chifa_card_number: form.carteChifa || null,
+      first_name:        form.prenom || null,   // ← prenom → first_name
+      last_name:         form.nom || null,       // ← nom → last_name
+      gender:            form.civilite === 'Mr' ? 'male' : 'female',
+      marital_status:    form.sitFamiliale || null,
+      profession:        form.profession || null,
+      phone:             form.telephone || null,
+      address:           form.adresse || null,
+      weight:            parseFloat(form.poids) || null,
+      height:            parseFloat(form.taille) || null,
+      personal_history:  form.antecedentsPerso || null,
+      family_history:    form.antecedentsFamiliaux || null,
+      notes:             form.notes || null,
+      general_observation: form.observations || null,
+    })
+  })
+
+  if (response.ok) {
     navigate(ROUTES.PATIENTS)
+  } else {
+    alert('Erreur lors de la création du patient')
   }
+}
 
  const handleReset = () => {
   setForm({

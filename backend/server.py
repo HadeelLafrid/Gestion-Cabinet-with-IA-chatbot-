@@ -25,6 +25,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.include_router(consultationRoute.router)
+app.include_router(authenticationRoute.router)
+app.include_router(patient_router)  
+app.include_router(dashboardRoute)
 
 @app.get("/")
 async def root():
@@ -37,10 +41,6 @@ app.include_router(ai_medicines.router, prefix="/api/ai/medicines", tags=["Ai Me
 app.include_router(ai_safe_medicines.router, prefix="/api/ai/safe-medicines", tags=["Ai Safe Medicines"])
 app.include_router(ai_resume.router, prefix="/api/ai/resume", tags=["Ai Resume"])
 
-# Register standard routes
-app.include_router(consultationRoute.router)
-app.include_router(authenticationRoute.router)
-app.include_router(patient_router)
 
 if __name__ == "__main__":
     uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=True)

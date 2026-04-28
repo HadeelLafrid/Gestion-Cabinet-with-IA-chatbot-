@@ -81,7 +81,7 @@ export default function ArchivePage() {
             patientId: `PT-${patient.id}`,
             patientName: `${patient.first_name} ${patient.last_name}`,
             age: patient.age ? `${patient.age} ans` : '—',
-            genre: patient.gender === 'M' ? 'Homme' : patient.gender === 'F' ? 'Femme' : '—',
+            genre: patient.gender === 'M' || patient.gender === 'male' ? 'Homme' : patient.gender === 'F' || patient.gender === 'female' ? 'Femme' : '—',
             color: getColor(index),
             consultations: [],
           })
