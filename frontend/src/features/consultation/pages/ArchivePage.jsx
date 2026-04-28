@@ -1,65 +1,33 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import apiClient from '../../../services/apiClient'
 
-const MOCK_ARCHIVE = [
-  {
-    patientId: 'PT-4401', patientName: 'lafrid hadil',
-    age: '42 ans', genre: 'Femme', color: 'bg-pink-200 text-pink-700',
-    consultations: [
-      { id: 'EH-9100', date: '12 Oct 2023', motif: 'Contrôle tension artérielle',    diagnostic: 'I10 - Hypertension'         },
-      { id: 'EH-8800', date: '05 Sep 2023', motif: 'Suivi traitement Lisinopril',     diagnostic: 'I10 - Hypertension'         },
-      { id: 'EH-8200', date: '14 Juil 2023',motif: 'Douleurs thoraciques aiguës',    diagnostic: 'R07.9 - Douleur thoracique' },
-      { id: 'EH-7500', date: '20 Avr 2023', motif: 'Bilan annuel cardiovasculaire',  diagnostic: 'Z00.0 - Examen général'     },
-    ],
-  },
-  {
-    patientId: 'PT-4402', patientName: 'Jean Dupont',
-    age: '31 ans', genre: 'Homme', color: 'bg-cyan-200 text-cyan-700',
-    consultations: [
-      { id: 'EH-9281', date: '24 Oct 2023', motif: 'Mal de gorge persistant',        diagnostic: 'J02.9 - Pharyngite'         },
-      { id: 'EH-8900', date: '18 Sep 2023', motif: 'Contrôle post-antibiotique',     diagnostic: 'J02.9 - Pharyngite'         },
-    ],
-  },
-  {
-    patientId: 'PT-4403', patientName: 'Robert Martin',
-    age: '68 ans', genre: 'Homme', color: 'bg-indigo-200 text-indigo-700',
-    consultations: [
-      { id: 'EH-9050', date: '18 Oct 2023', motif: 'Suivi diabète type 2',           diagnostic: 'E11 - Diabète type 2'       },
-      { id: 'EH-8600', date: '22 Août 2023',motif: 'Bilan glycémique trimestriel',   diagnostic: 'E11 - Diabète type 2'       },
-      { id: 'EH-7900', date: '10 Mai 2023', motif: 'Hypoglycémie sévère',            diagnostic: 'E16.0 - Hypoglycémie'       },
-      { id: 'EH-7100', date: '03 Fév 2023', motif: 'Ajustement traitement insuline', diagnostic: 'E11 - Diabète type 2'       },
-      { id: 'EH-6500', date: '15 Jan 2023', motif: 'Bilan annuel complet',           diagnostic: 'Z00.0 - Examen général'     },
-    ],
-  },
-  {
-    patientId: 'PT-4404', patientName: 'Alice Dubois',
-    age: '25 ans', genre: 'Femme', color: 'bg-purple-200 text-purple-700',
-    consultations: [
-      { id: 'EH-9200', date: '20 Oct 2023', motif: 'Éruption cutanée chronique',     diagnostic: 'L30.9 - Dermatite'          },
-      { id: 'EH-8700', date: '01 Sep 2023', motif: 'Contrôle traitement dermato',    diagnostic: 'L30.9 - Dermatite'          },
-    ],
-  },
-  {
-    patientId: 'PT-4405', patientName: 'Sophie Girard',
-    age: '54 ans', genre: 'Femme', color: 'bg-amber-200 text-amber-700',
-    consultations: [
-      { id: 'EH-9300', date: '22 Oct 2023', motif: 'Suivi cardiologique mensuel',    diagnostic: 'I25 - Cardiopathie ischémique' },
-      { id: 'EH-8400', date: '12 Août 2023',motif: 'Palpitations et essoufflement',  diagnostic: 'I49.9 - Arythmie'           },
-      { id: 'EH-7700', date: '30 Avr 2023', motif: 'Bilan cardiologique annuel',     diagnostic: 'Z00.0 - Examen général'     },
-    ],
-  },
-  {
-    patientId: 'PT-4406', patientName: 'Pierre Bernard',
-    age: '47 ans', genre: 'Homme', color: 'bg-green-200 text-green-700',
-    consultations: [
-      { id: 'EH-9150', date: '25 Oct 2023', motif: 'Céphalées récurrentes',          diagnostic: 'G43 - Migraine'             },
-      { id: 'EH-8500', date: '15 Sep 2023', motif: 'Suivi neurologique',             diagnostic: 'G43 - Migraine'             },
-    ],
-  },
-]
+function getNumericId(patientId) {
+  // Extract numeric ID from format "PT-4401" -> "4401"
+  const match = patientId.match(/PT-(\d+)/)
+  return match ? match[1] : patientId.replace('PT-', '')
+}
 
 function getInitials(name) {
   return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+}
+
+function getColor(index) {
+  const colors = [
+    'bg-pink-200 text-pink-700',
+    'bg-cyan-200 text-cyan-700',
+    'bg-indigo-200 text-indigo-700',
+    'bg-purple-200 text-purple-700',
+    'bg-amber-200 text-amber-700',
+    'bg-green-200 text-green-700',
+  ]
+  return colors[index % colors.length]
+}
+
+function formatDate(dateString) {
+  if (!dateString) return '—'
+  const date = new Date(dateString)
+  return date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
 export default function ArchivePage() {
@@ -67,7 +35,8 @@ export default function ArchivePage() {
   const [query,      setQuery]      = useState('')
   const [searched,   setSearched]   = useState(false)
   const [expandedId, setExpandedId] = useState(null)
-  const [archive,    setArchive]    = useState(MOCK_ARCHIVE)
+  const [archive,    setArchive]    = useState([])
+  const [loading,    setLoading]    = useState(false)
   const [deleteTarget, setDeleteTarget] = useState(null)
 
   const hasSearched = searched && query.trim() !== ''
@@ -83,20 +52,83 @@ export default function ArchivePage() {
     (acc, p) => acc + p.consultations.length, 0
   )
 
-  const handleSearch = () => {
-    if (query.trim()) setSearched(true)
+  const handleSearch = async () => {
+    if (!query.trim()) return
+    
+    setLoading(true)
+    setSearched(true)
+    
+    try {
+      // Fetch consultations with patient search
+      const response = await apiClient.get('/consultations/', {
+        params: { patient_search: query.trim() }
+      })
+      
+      const consultations = response.data
+      
+      // Group consultations by patient
+      // Backend returns: array of consultations with patient info
+      const patientMap = new Map()
+      
+      consultations.forEach((consultation, index) => {
+        const patient = consultation.patient
+        if (!patient) return
+        
+        const patientKey = patient.id
+        
+        if (!patientMap.has(patientKey)) {
+          patientMap.set(patientKey, {
+            patientId: `PT-${patient.id}`,
+            patientName: `${patient.first_name} ${patient.last_name}`,
+            age: patient.age ? `${patient.age} ans` : '—',
+            genre: patient.gender === 'M' ? 'Homme' : patient.gender === 'F' ? 'Femme' : '—',
+            color: getColor(index),
+            consultations: [],
+          })
+        }
+        
+        const patientData = patientMap.get(patientKey)
+        patientData.consultations.push({
+          id: consultation.id,
+          date: formatDate(consultation.consultation_date),
+          motif: consultation.motif || '—',
+          diagnostic: consultation.diagnosis || '—',
+        })
+      })
+      
+      // Sort consultations by date (newest first)
+      patientMap.forEach(patient => {
+        patient.consultations.sort((a, b) => new Date(b.date) - new Date(a.date))
+      })
+      
+      setArchive(Array.from(patientMap.values()))
+    } catch (error) {
+      console.error('Error fetching consultations:', error)
+      setArchive([])
+    } finally {
+      setLoading(false)
+    }
   }
 
   // Delete a single consultation
-  const confirmDelete = () => {
-    setArchive(prev => prev.map(patient => {
-      if (patient.patientId !== deleteTarget.patientId) return patient
-      return {
-        ...patient,
-        consultations: patient.consultations.filter(c => c.id !== deleteTarget.id),
-      }
-    }))
-    setDeleteTarget(null)
+  const confirmDelete = async () => {
+    if (!deleteTarget) return
+    
+    try {
+      await apiClient.delete(`/consultations/${deleteTarget.id}`)
+      
+      setArchive(prev => prev.map(patient => {
+        if (patient.patientId !== deleteTarget.patientId) return patient
+        return {
+          ...patient,
+          consultations: patient.consultations.filter(c => c.id !== deleteTarget.id),
+        }
+      }))
+    } catch (error) {
+      console.error('Error deleting consultation:', error)
+    } finally {
+      setDeleteTarget(null)
+    }
   }
 
   return (
@@ -176,15 +208,25 @@ export default function ArchivePage() {
       {hasSearched && (
         <div className="flex flex-col gap-4">
 
+          {/* Loading state */}
+          {loading && (
+            <div className="flex flex-col items-center justify-center py-16 gap-3">
+              <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+              <p className="text-sm text-gray-400">Chargement des consultations...</p>
+            </div>
+          )}
+
           {/* Summary */}
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-500">
-              <span className="font-semibold text-gray-700">{filteredPatients.length}</span>{' '}
-              patient{filteredPatients.length !== 1 ? 's' : ''} —{' '}
-              <span className="font-semibold text-indigo-600">{totalConsultations}</span>{' '}
-              consultation{totalConsultations !== 1 ? 's' : ''} archivée{totalConsultations !== 1 ? 's' : ''}
-            </p>
-          </div>
+          {!loading && (
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-gray-500">
+                <span className="font-semibold text-gray-700">{filteredPatients.length}</span>{' '}
+                patient{filteredPatients.length !== 1 ? 's' : ''} —{' '}
+                <span className="font-semibold text-indigo-600">{totalConsultations}</span>{' '}
+                consultation{totalConsultations !== 1 ? 's' : ''} archivée{totalConsultations !== 1 ? 's' : ''}
+              </p>
+            </div>
+          )}
 
           {/* No results */}
           {filteredPatients.length === 0 && (
@@ -201,7 +243,7 @@ export default function ArchivePage() {
           )}
 
           {/* Patient cards */}
-          {filteredPatients.map(patient => {
+          {!loading && filteredPatients.map(patient => {
             const isExpanded = expandedId === patient.patientId
 
             return (
@@ -300,7 +342,7 @@ export default function ArchivePage() {
 
                                   {/* Edit */}
                                   <button
-                                    onClick={() => navigate(`/consultation/${patient.patientId}?edit=${c.id}`)}
+                                    onClick={() => navigate(`/consultation/${getNumericId(patient.patientId)}?edit=${c.id}`)}
                                     className="flex items-center gap-1.5 text-amber-400 hover:text-amber-600 text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-amber-50 transition-colors"
                                   >
                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -344,7 +386,7 @@ export default function ArchivePage() {
                       </p>
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => navigate(`/patients/${patient.patientId}`)}
+                          onClick={() => navigate(`/patients/${getNumericId(patient.patientId)}`)}
                           className="flex items-center gap-1.5 border border-gray-200 text-gray-500 hover:bg-gray-100 text-xs font-medium px-3 py-2 rounded-full transition-colors"
                         >
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -354,7 +396,7 @@ export default function ArchivePage() {
                           Dossier patient
                         </button>
                         <button
-                          onClick={() => navigate(`/consultation/${patient.patientId}`)}
+                          onClick={() => navigate(`/consultation/${getNumericId(patient.patientId)}`)}
                           className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-3 py-2 rounded-full transition-colors"
                         >
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">

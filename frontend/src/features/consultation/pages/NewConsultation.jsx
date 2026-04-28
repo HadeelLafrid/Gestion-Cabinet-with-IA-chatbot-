@@ -73,8 +73,70 @@ export default function NewConsultation() {
   const patientKey = patientId?.startsWith("PT-")
     ? patientId
     : `PT-${patientId}`;
-  const patient = MOCK_PATIENTS[patientKey] || MOCK_PATIENTS["PT-4402"];
+  const initialPatient = MOCK_PATIENTS[patientKey] || MOCK_PATIENTS["PT-4402"];
   const panelRef = useRef(null);
+
+  const [patient, setPatient] = useState(initialPatient);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPatient = async () => {
+      try {
+        const response = await apiClient.get(`/api/v1/patients/${patientId}`);
+        const p = response.data;
+        let age = "N/A";
+        if (p.date_of_birth) {
+          const birthDate = new Date(p.date_of_birth);
+          const ageDifMs = Date.now() - birthDate.getTime();
+          const ageDate = new Date(ageDifMs);
+          age = Math.abs(ageDate.getUTCFullYear() - 1970) + " ans";
+        }
+        setPatient({
+          ...p,
+          name:
+            `${p.first_name || ""} ${p.last_name || ""}`.trim() || "Inconnu",
+          age: age,
+          genre:
+            p.gender === "M"
+              ? "Homme"
+              : p.gender === "F"
+                ? "Femme"
+                : p.gender || "Non spécifié",
+          id: p.id,
+        });
+
+        try {
+          const medsRes = await apiClient.get(
+            `/consultations/medicines/${patientId}`,
+          );
+          if (medsRes.data) {
+            setMeds(
+              medsRes.data.map((m) => ({
+                id: m.id || Date.now() + Math.random(),
+                name: m.name,
+                instruction: m.dosage || "",
+                icon: "pill",
+              })),
+            );
+          }
+        } catch (err) {
+          console.warn(
+            "Could not fetch medicines for patient or none found",
+            err,
+          );
+        }
+      } catch (error) {
+        console.error("Error fetching patient", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (patientId) {
+      fetchPatient();
+    } else {
+      setLoading(false);
+    }
+  }, [patientId]);
 
   const [form, setForm] = useState({
     motif: "",
@@ -102,7 +164,7 @@ export default function NewConsultation() {
   const [generatedResume, setGeneratedResume] = useState("");
   const [showResumePanel, setShowResumePanel] = useState(false);
   const [chatConversation, setChatConversation] = useState([]);
-  
+
   const [patientRecap, setPatientRecap] = useState(null);
   const [isGeneratingRecap, setIsGeneratingRecap] = useState(false);
   const [isPredicting, setIsPredicting] = useState(false);
@@ -172,16 +234,21 @@ export default function NewConsultation() {
       alert("IA: Analyse terminée. Le diagnostic a été suggéré.");
     } catch (error) {
       console.error("AI Prediction error:", error);
-      alert("L'IA n'a pas pu générer de prévision. Vérifiez votre connexion au serveur.");
+      alert(
+        "L'IA n'a pas pu générer de prévision. Vérifiez votre connexion au serveur.",
+      );
     } finally {
       setIsPredicting(false);
     }
   };
 
   const handlePredictMedicines = async () => {
-    const currentDiagnosis = form.diagnostic || (tags.length > 0 ? tags.join(", ") : "");
+    const currentDiagnosis =
+      form.diagnostic || (tags.length > 0 ? tags.join(", ") : "");
     if (!currentDiagnosis.trim()) {
-      alert("Veuillez d'abord saisir ou faire prédire un diagnostic avant de générer le traitement.");
+      alert(
+        "Veuillez d'abord saisir ou faire prédire un diagnostic avant de générer le traitement.",
+      );
       return;
     }
 
@@ -216,13 +283,50 @@ export default function NewConsultation() {
       }
     } catch (error) {
       console.error("AI Prediction error:", error);
-      alert("L'IA n'a pas pu générer de traitement. Vérifiez votre connexion au serveur.");
+      alert(
+        "L'IA n'a pas pu générer de traitement. Vérifiez votre connexion au serveur.",
+      );
     } finally {
       setIsPredictingMedicines(false);
     }
   };
 
   // Generate resume based on consultation data (now via AI)
+  const handleSaveConsultation = async () => {
+    try {
+      const payload = {
+        patient_id: parseInt(patientId),
+        consultation_date: new Date().toISOString(),
+        motif: form.motif,
+        clinical_observation: form.observations,
+        diagnosis: tags.join(", "),
+        severity: form.severite,
+        additional_notes: form.notes,
+        medicines: meds
+          .filter((m) => m.icon === "pill")
+          .map((m) => ({
+            medicine_name: m.name,
+            dosage: m.instruction,
+          })),
+        exams: meds
+          .filter((m) => m.icon === "lab")
+          .map((m) => ({
+            exam_name: m.name,
+            notes: m.instruction,
+          })),
+        payment: form.montant ? { amount: parseFloat(form.montant) } : null,
+      };
+
+      await apiClient.post("/consultations/", payload);
+      // Generate resume after successful save
+      generateResume();
+    } catch (error) {
+      console.error("Error saving consultation", error);
+      alert("Erreur lors de l'enregistrement de la consultation.");
+    }
+  };
+
+  // Generate resume based on consultation data
   const generateResume = async () => {
     setIsGeneratingResume(true);
     try {
@@ -235,10 +339,13 @@ export default function NewConsultation() {
         observations: form.observations || "Non spécifiées",
         diagnostic: tags,
         severite: form.severite || "Non spécifiée",
-        treatments: meds.map((m) => ({ name: m.name, instruction: m.instruction })),
+        treatments: meds.map((m) => ({
+          name: m.name,
+          instruction: m.instruction,
+        })),
         notes: form.notes || "Aucune note",
         chat_history: chatConversation || [],
-        montant: form.montant ? String(form.montant) : "Non spécifié"
+        montant: form.montant ? String(form.montant) : "Non spécifié",
       };
 
       const response = await apiClient.post("api/ai/resume/generate", payload);
@@ -246,7 +353,9 @@ export default function NewConsultation() {
       setShowResumeModal(true);
     } catch (error) {
       console.error("Resume generation error:", error);
-      alert("L'IA n'a pas pu générer le résumé. Vérifiez votre connexion au serveur.");
+      alert(
+        "L'IA n'a pas pu générer le résumé. Vérifiez votre connexion au serveur.",
+      );
     } finally {
       setIsGeneratingResume(false);
     }
@@ -339,7 +448,6 @@ ${context.notes ? `Notes: ${context.notes.substring(0, 100)}...` : ""}
 Comment puis-je vous aider à approfondir ce cas?`;
   };
 
- 
   const generatePatientRecap = async () => {
     const pId = String(patient.id).replace(/\D/g, "");
     if (!pId) {
@@ -369,6 +477,22 @@ Comment puis-je vous aider à approfondir ce cas?`;
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   }, [showResumeModal]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (!patient) {
+    return (
+      <div className="flex items-center justify-center h-64 text-gray-500 font-medium">
+        Patient non trouvé
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-5">
@@ -647,18 +771,29 @@ Comment puis-je vous aider à approfondir ce cas?`;
                 </div>
                 {predictedDiagnoses.length > 0 && (
                   <div className="mt-3 flex gap-2 flex-wrap items-center">
-                    <span className="text-xs text-gray-500 font-medium">Suggestions IA:</span>
+                    <span className="text-xs text-gray-500 font-medium">
+                      Suggestions IA:
+                    </span>
                     {predictedDiagnoses.map((pd) => (
                       <button
                         key={pd.name}
                         title={`Probabilité : ${pd.likelihood.toUpperCase()}\nRaisonnement : ${pd.reasoning}`}
                         onClick={() => {
                           setTags((prev) => [...new Set([...prev, pd.name])]);
-                          setPredictedDiagnoses((prev) => prev.filter((x) => x.name !== pd.name));
+                          setPredictedDiagnoses((prev) =>
+                            prev.filter((x) => x.name !== pd.name),
+                          );
                         }}
                         className="flex items-center gap-1.5 bg-white border border-indigo-200 shadow-sm hover:shadow text-indigo-700 text-xs font-semibold px-3 py-1.5 rounded-full transition-all"
                       >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <svg
+                          width="12"
+                          height="12"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                        >
                           <path d="M12 5v14M5 12h14" />
                         </svg>
                         {pd.name}
@@ -716,7 +851,14 @@ Comment puis-je vous aider à approfondir ce cas?`;
                     </>
                   ) : (
                     <>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                      >
                         <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
                       </svg>
                       Prédire le traitement (IA)
@@ -1088,7 +1230,14 @@ Comment puis-je vous aider à approfondir ce cas?`;
                 </>
               ) : (
                 <>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <svg
+                    width="15"
+                    height="15"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                  >
                     <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
                   </svg>
                   Générer le résumé IA
@@ -1096,7 +1245,9 @@ Comment puis-je vous aider à approfondir ce cas?`;
               )}
             </button>
             <button
-              onClick={() => alert("Fonctionnalité d'enregistrement en base à venir!")}
+              onClick={() =>
+                alert("Fonctionnalité d'enregistrement en base à venir!")
+              }
               className="px-8 py-3 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors flex items-center gap-2"
             >
               <svg
@@ -1149,7 +1300,7 @@ Comment puis-je vous aider à approfondir ce cas?`;
                     Récapitulatif Historique
                   </p>
                 </div>
-                
+
                 {patientRecap ? (
                   <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4">
                     <pre className="text-xs text-indigo-900 font-sans leading-relaxed whitespace-pre-wrap">
@@ -1159,20 +1310,34 @@ Comment puis-je vous aider à approfondir ce cas?`;
                 ) : (
                   <div className="bg-gray-50 border border-gray-100 border-dashed rounded-xl p-5 flex flex-col items-center text-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-500">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <svg
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
                         <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-gray-700 mb-1">Historique patient</p>
-                      <p className="text-xs text-gray-500">Générez un résumé des anciennes consultations de ce patient pour l'avoir sous les yeux.</p>
+                      <p className="text-sm font-semibold text-gray-700 mb-1">
+                        Historique patient
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        Générez un résumé des anciennes consultations de ce
+                        patient pour l'avoir sous les yeux.
+                      </p>
                     </div>
                     <button
                       onClick={generatePatientRecap}
                       disabled={isGeneratingRecap}
                       className="mt-1 flex items-center justify-center gap-2 w-full py-2 bg-white border border-indigo-200 text-indigo-600 rounded-lg text-xs font-bold hover:bg-indigo-50 transition-colors"
                     >
-                      {isGeneratingRecap ? "Analyse en cours..." : "Générer le récapitulatif"}
+                      {isGeneratingRecap
+                        ? "Analyse en cours..."
+                        : "Générer le récapitulatif"}
                     </button>
                   </div>
                 )}
