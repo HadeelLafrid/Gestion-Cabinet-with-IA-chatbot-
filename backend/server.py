@@ -6,6 +6,7 @@ import uvicorn
 import app.routes.consultationRoute as consultationRoute
 import app.routes.authenticationRoute as authenticationRoute
 from app.routes.patient_routes import router as patient_router
+from app.routes.dashboardRoute import router as dashboardRoute
 # AI endpoint imports from friend's branch
 from app.api.endpoints import (
     ai_consultation,
