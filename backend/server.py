@@ -2,7 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import app.routes.consultationRoute as consultationRoute
 import app.routes.authenticationRoute as authenticationRoute
-from app.routes.patient_routes import router as patient_router 
+from app.routes.patient_routes import router as patient_router
+from app.routes.dashboardRoute import router as dashboardRoute
 
 app = FastAPI()
 
@@ -17,7 +18,7 @@ app.add_middleware(
 app.include_router(consultationRoute.router)
 app.include_router(authenticationRoute.router)
 app.include_router(patient_router)  
-
+app.include_router(dashboardRoute)
 
 @app.get("/")
 async def root():
