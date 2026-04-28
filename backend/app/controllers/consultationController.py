@@ -28,12 +28,8 @@ def delete_consultation_controller(consultation_id: int, db: Session = Depends(g
 
 def get_consultations_controller(skip: int = 0, limit: int = 100, db: Session = Depends(get_session), patient_search: str = None, patient_id: int = None, date: str = None):
     consultations = get_consultations(db, skip, limit, patient_id=patient_id, date=date, patient_search=patient_search)
-    if not consultations:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No consultations found")
     return consultations
 
 def get_medicines_controller(patient_id: int, db: Session = Depends(get_session)):
     medicines = fetch_medicines(db, patient_id)
-    if not medicines:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No medicines found")
     return medicines

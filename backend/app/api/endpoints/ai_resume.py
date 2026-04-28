@@ -167,12 +167,9 @@ async def generate_patient_recap(patient_id: int, db: Session = Depends(get_sess
     if not patient:
         raise HTTPException(status_code=404, detail="Patient non trouvé")
         
-    history_context = f"- Nom du patient: {patient.first_name} {patient.last_name}\n"
-    history_context += f"- Antécédents personnels: {patient.personal_history or 'Aucun'}\n"
-    history_context += f"- Antécédents familiaux: {patient.family_history or 'Aucun'}\n"
-    history_context += f"- Mode de vie: {patient.lifestyle or 'Aucun'}\n"
+    history_context = f"Patient: {patient.first_name} {patient.last_name}\n"
+    history_context += f"Antécédents: {patient.personal_history or 'Aucun'}\n"
     
-    # Retrieve past consultations
     past_consultations = db.exec(
         select(Consultation)
         .where(Consultation.patient_id == patient_id)
@@ -180,45 +177,44 @@ async def generate_patient_recap(patient_id: int, db: Session = Depends(get_sess
         .limit(5)
     ).all()
     
-    if not past_consultations:
-        history_context += "\nC'est la première consultation de ce patient (aucun historique trouvé)."
+    all_meds = []
+    for c in past_consultations:
+        meds = db.exec(
+            select(Medicine.name)
+            .join(ConsultationMedicine)
+            .where(ConsultationMedicine.consultation_id == c.id)
+        ).all()
+        if meds:
+            all_meds.extend(meds)
+
+    unique_meds = list(set(all_meds))
+    
+    # Simple logic: list them or say none found
+    if unique_meds:
+        meds_data = f"Médicaments à lister: {', '.join(unique_meds)}"
     else:
-        history_context += "\n--- HISTORIQUE DES CONSULTATIONS PRÉCÉDENTES ---\n"
-        for c in past_consultations:
-            date_str = c.consultation_date.strftime("%Y-%m-%d") if c.consultation_date else "Date inconnue"
-            history_context += f"\nDate: {date_str}\n"
-            history_context += f"Motif: {c.reason}\n"
-            history_context += f"Diagnostic: {c.clinical_exam}\n"
-            
-            meds = db.exec(
-                select(Medicine.name)
-                .join(ConsultationMedicine)
-                .where(ConsultationMedicine.consultation_id == c.id)
-            ).all()
-            if meds:
-                history_context += f"Traitements: {', '.join(meds)}\n"
+        meds_data = "Aucun médicament trouvé"
 
     prompt = f"""
-Tu es un médecin spécialiste traitant. Voici le dossier d'un patient qui vient consulter aujourd'hui.
-
+Infos dossier:
 {history_context}
+{meds_data}
 
-Tâche: Génère un "Récapitulatif Patient" court et pertinent (4 à 6 lignes maximum) pour aider le médecin à se remémorer rapidement le profil et l'historique de ce patient au début d'une nouvelle consultation.
-Il doit être mis en page sous forme de points clés avec emojis pour une lecture rapide par le praticien.
+Tâche: Fais un résumé médical très court (3-4 lignes) avec emojis.
+Si des médicaments sont fournis au-dessus, liste-les simplement avec l'emoji 💊.
+Si l'info est "Aucun médicament trouvé", écris exactement: "Aucun médicament trouvé".
 
-INSTRUCTION CRITIQUE:
-Tu dois impérativement retourner un JSON valide avec la clé "recap_text". N'inclus aucun autre texte.
-Format:
+Format JSON:
 {{
-    "recap_text": "votre récapitulatif avec emojis..."
+    "recap_text": "Texte ici"
 }}
 """
     try:
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.2,
-            max_tokens=500,
+            temperature=0.1,
+            max_tokens=300,
         )
         raw_text = response.choices[0].message.content
         clean_json = raw_text.replace('```json', '').replace('```', '').strip()

@@ -201,8 +201,8 @@ export default function NewConsultation() {
       const diagnosticsInput = {
         motif: form.motif,
         symptoms: form.observations || "Aucune observation",
-        patient_id: patient.id ? parseInt(patient.id.split("-")[0]) : null,
-        age: patient.age ? parseInt(patient.age) : null,
+        patient_id: patient.id ? parseInt(String(patient.id).replace(/\D/g, "")) : null,
+        age: patient.age ? parseInt(String(patient.age)) : null,
         gender: patient.genre === "Femme" ? "female" : "male",
       };
 
@@ -256,7 +256,7 @@ export default function NewConsultation() {
     try {
       const medicinesInput = {
         diagnosis: currentDiagnosis,
-        age: patient.age ? parseInt(patient.age) : null,
+        age: patient.age ? parseInt(String(patient.age)) : null,
         gender: patient.genre === "Femme" ? "female" : "male",
       };
 
@@ -294,8 +294,9 @@ export default function NewConsultation() {
   // Generate resume based on consultation data (now via AI)
   const handleSaveConsultation = async () => {
     try {
+      const pId = parseInt(String(patient.id || patientId).replace(/\D/g, ""));
       const payload = {
-        patient_id: parseInt(patientId),
+        patient_id: pId,
         consultation_date: new Date().toISOString(),
         motif: form.motif,
         clinical_observation: form.observations,
@@ -318,11 +319,11 @@ export default function NewConsultation() {
       };
 
       await apiClient.post("/consultations/", payload);
-      // Generate resume after successful save
-      generateResume();
+      alert("Consultation enregistrée avec succès !");
+      navigate("/");
     } catch (error) {
       console.error("Error saving consultation", error);
-      alert("Erreur lors de l'enregistrement de la consultation.");
+      alert("Erreur lors de l'enregistrement de la consultation. Vérifiez que toutes les informations sont correctes.");
     }
   };
 
@@ -374,78 +375,40 @@ export default function NewConsultation() {
   };
 
   // Send message to AI with full consultation context
-  const sendAiMessage = () => {
+  const sendAiMessage = async () => {
     if (!aiChat.trim()) return;
 
-    const userMessage = { role: "user", text: aiChat };
+    const currentChat = aiChat;
+    const userMessage = { role: "user", text: currentChat };
     setChatConversation((prev) => [...prev, userMessage]);
     setAiChat("");
 
-    setTimeout(() => {
-      const aiResponse = generateContextualResponse(aiChat, {
-        patient,
-        motif: form.motif,
-        observations: form.observations,
-        diagnostic: tags,
-        treatments: meds,
-        notes: form.notes,
-      });
+    try {
+      const payload = {
+        question: currentChat,
+        context: {
+          patient: patient,
+          motif: form.motif,
+          observations: form.observations,
+          diagnostic: tags,
+          treatments: meds.map(m => ({ name: m.name, instruction: m.instruction })),
+          notes: form.notes,
+        }
+      };
+      
+      const response = await apiClient.post("/api/ai/consultation/chat", payload);
+      
       setChatConversation((prev) => [
         ...prev,
-        { role: "ai", text: aiResponse },
+        { role: "ai", text: response.data.answer },
       ]);
-    }, 800);
-  };
-
-  // Generate contextual AI response
-  const generateContextualResponse = (question, context) => {
-    const lowerQuestion = question.toLowerCase();
-
-    if (
-      lowerQuestion.includes("risque") ||
-      lowerQuestion.includes("danger") ||
-      lowerQuestion.includes("effet secondaire")
-    ) {
-      return `⚠️ Analyse des risques basée sur la consultation :
-• Patient: ${context.patient.name}, ${context.patient.age}
-• Diagnostic: ${context.diagnostic.join(", ")}
-• Traitements prescrits: ${context.treatments.map((t) => t.name).join(", ")}
-
-Recommandation: Surveiller les effets indésirables potentiels. Un suivi dans 7 jours est conseillé.`;
+    } catch (error) {
+      console.error("Erreur lors de la communication avec l'IA:", error);
+      setChatConversation((prev) => [
+        ...prev,
+        { role: "ai", text: "Désolé, une erreur est survenue lors de la communication avec l'assistant." },
+      ]);
     }
-
-    if (
-      lowerQuestion.includes("examen") ||
-      lowerQuestion.includes("analyse") ||
-      lowerQuestion.includes("bilan")
-    ) {
-      return `🔬 Examens complémentaires suggérés pour "${context.motif || "ce motif"}":
-• Bilan sanguin complet
-• Contrôle de la tension artérielle
-• ${context.diagnostic.includes("Hypertension") ? "Échocardiogramme" : "Bilan lipidique"}
-
-Ces examens aideraient à confirmer le diagnostic et adapter le traitement.`;
-    }
-
-    if (
-      lowerQuestion.includes("traitement") ||
-      lowerQuestion.includes("médicament") ||
-      lowerQuestion.includes("posologie")
-    ) {
-      return `💊 Analyse du traitement actuel:
-${context.treatments.map((t) => `• ${t.name}: ${t.instruction}`).join("\n")}
-
-Le traitement semble adapté au diagnostic de ${context.diagnostic.join(", ")}. 
-Rappeler au patient l'importance de l'observance et des rendez-vous de suivi.`;
-    }
-
-    return `📊 Analyse de la consultation du patient ${context.patient.name}:
-
-Diagnostic: ${context.diagnostic.join(", ")}
-Traitement: ${context.treatments.length} élément(s) prescrit(s)
-${context.notes ? `Notes: ${context.notes.substring(0, 100)}...` : ""}
-
-Comment puis-je vous aider à approfondir ce cas?`;
   };
 
   const generatePatientRecap = async () => {
@@ -1245,9 +1208,7 @@ Comment puis-je vous aider à approfondir ce cas?`;
               )}
             </button>
             <button
-              onClick={() =>
-                alert("Fonctionnalité d'enregistrement en base à venir!")
-              }
+              onClick={handleSaveConsultation}
               className="px-8 py-3 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors flex items-center gap-2"
             >
               <svg

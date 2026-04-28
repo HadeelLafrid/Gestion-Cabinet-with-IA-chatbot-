@@ -1,5 +1,6 @@
 import os
 import json
+from datetime import datetime
 from typing import Optional, List
 
 from fastapi import APIRouter, HTTPException, Depends
@@ -46,6 +47,23 @@ class AIResponse(BaseModel):
     red_flags: List[str]
     advice: str
     safety_notice: str
+
+
+class ChatContext(BaseModel):
+    patient: dict
+    motif: str
+    observations: str
+    diagnostic: List[str]
+    treatments: List[dict]
+    notes: str
+
+class ChatInput(BaseModel):
+    question: str
+    context: ChatContext
+
+class ChatOut(BaseModel):
+    answer: str
+
 
 
 @router.post("/predict")
@@ -171,4 +189,57 @@ FORMAT JSON STRICT:
         raise HTTPException(
             status_code=500,
             detail=f"Erreur IA: {str(e)}"
+        )
+
+@router.post("/chat", response_model=ChatOut)
+async def chat_consultation(data: ChatInput):
+    if not client:
+        raise HTTPException(status_code=500, detail="Clé API GROQ manquante")
+
+    patient = data.context.patient
+    patient_info = f"{patient.get('name', 'Inconnu')} ({patient.get('age', 'Âge inconnu')}, {patient.get('genre', 'Genre inconnu')})"
+    
+    diagnostic_str = ", ".join(data.context.diagnostic) if data.context.diagnostic else "Aucun diagnostic posé"
+    treatments_str = "\n".join([f"- {t.get('name')}: {t.get('instruction')}" for t in data.context.treatments]) if data.context.treatments else "Aucun traitement"
+
+    prompt = f"""
+Voici le contexte d'une consultation en cours:
+Patient: {patient_info}
+Motif: {data.context.motif}
+Observations: {data.context.observations}
+Diagnostic actuel: {diagnostic_str}
+Traitements:
+{treatments_str}
+Notes: {data.context.notes}
+
+Le médecin vous pose la question suivante concernant cette consultation:
+"{data.question}"
+
+Répondez de manière professionnelle, concise et utile pour le médecin. Ne donnez que la réponse directe à la question.
+    """
+
+    try:
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "Tu es un assistant médical expert en consultation. "
+                        "Tu aides le médecin à prendre des décisions et fournis des analyses basées sur les données de la consultation en cours."
+                    )
+                },
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.3,
+            max_tokens=800,
+        )
+
+        answer = response.choices[0].message.content.strip()
+        return ChatOut(answer=answer)
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erreur lors de la communication avec l'IA: {str(e)}"
         )
