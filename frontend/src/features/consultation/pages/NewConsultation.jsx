@@ -38,7 +38,7 @@ export default function NewConsultation() {
            ...p,
            name: `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Inconnu',
            age: age,
-           genre: p.gender === 'M' ? 'Homme' : p.gender === 'F' ? 'Femme' : p.gender || 'Non spécifié',
+           genre: p.gender === 'M' || p.gender === 'male' ? 'Homme' : p.gender === 'F' || p.gender === 'female' ? 'Femme' : p.gender || 'Non spécifié',
            id: p.id
         });
 

@@ -190,7 +190,7 @@ export default function ConsultationSearch() {
                   </div>
                   <div className="flex-1">
                     <p className="font-semibold text-gray-800">{p.first_name} {p.last_name}</p>
-                    <p className="text-xs text-gray-400">#{p.id} · {p.age} ans · {p.gender === 'M' ? 'Homme' : 'Femme'}</p>
+                    <p className="text-xs text-gray-400">#{p.id} · {p.age} ans · {p.gender === 'M' || p.gender === 'male' ? 'Homme' : 'Femme'}</p>
                   </div>
                   {p.last_consult && (
                     <div className="text-right mr-4">

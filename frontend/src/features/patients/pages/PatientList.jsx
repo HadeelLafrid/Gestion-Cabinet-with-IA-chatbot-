@@ -32,7 +32,7 @@ export default function PatientList() {
       setPatients([])
       return
     }
-    fetch(`http://localhost:8001/api/v1/patients/?search=${query}`)
+    fetch(`http://localhost:8000/api/v1/patients/?search=${query}`)
       .then(res => res.json())
       .then(data => setPatients(data.data ?? []))
   }, [query])
