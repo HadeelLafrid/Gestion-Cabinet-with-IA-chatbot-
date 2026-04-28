@@ -19,8 +19,8 @@ client = Groq(api_key=api_key) if api_key else None
 
 class SymptomsInput(BaseModel):
     diagnosis: str
-    age: int
-    gender: str
+    age: Optional[int] = None
+    gender: Optional[str] = None
 
 class MedicineOut(BaseModel):
     name: str

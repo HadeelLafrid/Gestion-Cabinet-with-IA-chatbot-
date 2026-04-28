@@ -24,6 +24,7 @@ client = Groq(api_key=api_key) if api_key else None
 
 
 class SymptomsInput(BaseModel):
+    motif: str
     symptoms: str
     patient_id: Optional[int] = None
     age: Optional[int] = None
@@ -83,7 +84,10 @@ PATIENT:
 - Genre: {target_gender}
 {history_context}
 
-SYMPTÔMES:
+MOTIF DE CONSULTATION:
+{data.motif}
+
+SYMPTÔMES ET OBSERVATIONS:
 {data.symptoms}
 
 INSTRUCTIONS STRICTES:

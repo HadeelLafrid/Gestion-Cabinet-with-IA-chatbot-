@@ -169,7 +169,7 @@ export default function AddPatient() {
             >
               Réinitialiser
             </button>
-            {currentStep < 3 ? (
+            {currentStep < 4 ? (
               <button
                 onClick={() => setCurrentStep(currentStep + 1)}
                 className="px-6 py-3 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors flex items-center gap-2"

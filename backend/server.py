@@ -3,6 +3,7 @@ from app.api.endpoints import ai_consultation
 from app.api.endpoints import ai_diagnosis
 from app.api.endpoints import ai_medicines
 from app.api.endpoints import ai_safe_medicines
+from app.api.endpoints import ai_resume
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
@@ -23,6 +24,7 @@ app.include_router(ai_consultation.router,prefix="/api/ai/consultation",tags=["A
 app.include_router(ai_diagnosis.router,prefix="/api/ai/diagnosis",tags=["Ai Diagnosis"])
 app.include_router(ai_medicines.router,prefix="/api/ai/medicines",tags=["Ai Medicines"])
 app.include_router(ai_safe_medicines.router,prefix="/api/ai/safe-medicines",tags=["Ai Safe Medicines"])
+app.include_router(ai_resume.router,prefix="/api/ai/resume",tags=["Ai Resume"])
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=True)
