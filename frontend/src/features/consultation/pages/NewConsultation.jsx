@@ -114,6 +114,7 @@ export default function NewConsultation() {
     try {
       const payload = {
         patient_id: parseInt(patientId),
+        consultation_date: new Date().toISOString(),
         motif: form.motif,
         clinical_observation: form.observations,
         diagnosis: tags.join(', '),
