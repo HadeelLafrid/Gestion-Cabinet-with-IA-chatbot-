@@ -1,7 +1,15 @@
 from fastapi import FastAPI
-from app.routes.patient_routes import router as patient_router  # ADD THIS
+from fastapi.middleware.cors import CORSMiddleware
+from app.routes.patient_routes import router as patient_router
 
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-app.include_router(patient_router)  
+app.include_router(patient_router)
