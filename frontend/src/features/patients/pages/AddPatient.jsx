@@ -42,8 +42,8 @@ export default function AddPatient() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       chifa_card_number: form.carteChifa || null,
-      first_name:        form.prenom || null,   
-      last_name:         form.nom || null,      
+      first_name:        form.prenom || null,   // ← prenom → first_name
+      last_name:         form.nom || null,       // ← nom → last_name
       gender:            form.civilite === 'Mr' ? 'male' : 'female',
       marital_status:    form.sitFamiliale || null,
       profession:        form.profession || null,
