@@ -4,13 +4,13 @@ import { ROUTES } from '../../../constants/routes'
 import Step1PersonalInfo from '../components/PatientForm/Step1PersonalInfo'
 import Step2Medical from '../components/PatientForm/Step2Medical'
 import Step3Documents from '../components/PatientForm/Step3Documents'
+import Step4Consultation from '../components/PatientForm/Step4Consultation'
 
 
 const steps = [
   { id: 1, label: 'Informations Personnelles', sub: 'Identité et contact'          },
   { id: 2, label: 'Consultation & Médical',    sub: 'Paramètres et antécédents'    },
-  { id: 3, label: 'Documents & Notes',         sub: 'Pièces jointes et observations'},
-  { id: 4, label: 'Première Consultation',     sub: 'Motif, diagnostic, traitement' },
+  { id: 3, label: 'Documents & Notes',         sub: 'Pièces jointes et observations'}
 ]
 
 export default function AddPatient() {
@@ -59,7 +59,8 @@ export default function AddPatient() {
   })
 
   if (response.ok) {
-    navigate(ROUTES.PATIENTS)
+    const data = await response.json();
+    navigate(`/consultation/${data.id}`)
   } else {
     alert('Erreur lors de la création du patient')
   }
@@ -172,9 +173,6 @@ export default function AddPatient() {
             {currentStep === 3 && (
               <Step3Documents form={form} updateForm={updateForm} />
             )}
-            {currentStep === 4 && (
-  <Step4Consultation form={form} updateForm={updateForm} />
-)}
           </div>
 
           {/* Bottom action buttons */}
@@ -193,7 +191,7 @@ export default function AddPatient() {
             >
               Réinitialiser
             </button>
-            {currentStep < 4 ? (
+            {currentStep < 3 ? (
               <button
                 onClick={() => setCurrentStep(currentStep + 1)}
                 className="px-6 py-3 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors flex items-center gap-2"
@@ -212,7 +210,7 @@ export default function AddPatient() {
                   <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
                   <polyline points="17 21 17 13 7 13 7 21" />
                 </svg>
-                Enregistrer
+                Enregistrer et démarrer la consultation
               </button>
             )}
           </div>
