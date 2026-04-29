@@ -13,7 +13,8 @@ from app.api.endpoints import (
     ai_diagnosis,
     ai_medicines,
     ai_safe_medicines,
-    ai_resume
+    ai_resume,
+    ai_assistant
 )
 
 app = FastAPI()
@@ -41,6 +42,7 @@ app.include_router(ai_diagnosis.router, prefix="/api/ai/diagnosis", tags=["Ai Di
 app.include_router(ai_medicines.router, prefix="/api/ai/medicines", tags=["Ai Medicines"])
 app.include_router(ai_safe_medicines.router, prefix="/api/ai/safe-medicines", tags=["Ai Safe Medicines"])
 app.include_router(ai_resume.router, prefix="/api/ai/resume", tags=["Ai Resume"])
+app.include_router(ai_assistant.router, prefix="/api/ai/assistant", tags=["Ai Assistant"])
 
 
 if __name__ == "__main__":
