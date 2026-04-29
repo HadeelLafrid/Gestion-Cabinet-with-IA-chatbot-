@@ -75,6 +75,7 @@ export default function NewConsultation() {
     : `PT-${patientId}`;
   const initialPatient = MOCK_PATIENTS[patientKey] || MOCK_PATIENTS["PT-4402"];
   const panelRef = useRef(null);
+  const draftHistoryKey = `assistant_chat_draft_${patientId || "unknown"}`;
 
   const [patient, setPatient] = useState(initialPatient);
   const [loading, setLoading] = useState(true);
@@ -125,6 +126,23 @@ export default function NewConsultation() {
             err,
           );
         }
+
+        try {
+          const historyPatientId = parseInt(String(p.id).replace(/\D/g, ""));
+          const historyRes = await apiClient.get(
+            `/api/ai/assistant/history/${historyPatientId}`,
+          );
+          const historyMessages = (historyRes.data || []).map((item) => ({
+            role: item.sender === "doctor" ? "user" : "ai",
+            text: item.message || "",
+          }));
+          setChatConversation(historyMessages);
+          setChatBaselineIndex(historyMessages.length);
+        } catch (historyError) {
+          console.warn("Could not fetch assistant history", historyError);
+          setChatConversation([]);
+          setChatBaselineIndex(0);
+        }
       } catch (error) {
         console.error("Error fetching patient", error);
       } finally {
@@ -164,6 +182,30 @@ export default function NewConsultation() {
   const [generatedResume, setGeneratedResume] = useState("");
   const [showResumePanel, setShowResumePanel] = useState(false);
   const [chatConversation, setChatConversation] = useState([]);
+  const [chatBaselineIndex, setChatBaselineIndex] = useState(0);
+
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem(draftHistoryKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed)) {
+          setChatConversation(parsed);
+          setChatBaselineIndex(parsed.length);
+        }
+      }
+    } catch (error) {
+      console.warn("Could not restore draft assistant history", error);
+    }
+  }, [draftHistoryKey]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(draftHistoryKey, JSON.stringify(chatConversation));
+    } catch (error) {
+      console.warn("Could not persist draft assistant history", error);
+    }
+  }, [chatConversation, draftHistoryKey]);
 
   const [patientRecap, setPatientRecap] = useState(null);
   const [isGeneratingRecap, setIsGeneratingRecap] = useState(false);
@@ -205,8 +247,6 @@ export default function NewConsultation() {
         age: patient.age ? parseInt(String(patient.age)) : null,
         gender: patient.genre === "Femme" ? "female" : "male",
       };
-
-      console.log("Input Diagnostics:", diagnosticsInput);
 
       const response_diagnostics = await apiClient.post(
         "/api/ai/diagnosis/predict/diagnosis",
@@ -318,7 +358,29 @@ export default function NewConsultation() {
         payment: form.montant ? { amount: parseFloat(form.montant) } : null,
       };
 
-      await apiClient.post("/consultations/", payload);
+      const created = await apiClient.post("/consultations/", payload);
+
+      const consultationId = created?.data?.id;
+      const sessionMessages = chatConversation.slice(chatBaselineIndex);
+      if (consultationId && sessionMessages.length > 0) {
+        try {
+          await apiClient.post(`/api/ai/assistant/history/${consultationId}`, {
+            messages: sessionMessages.map((message) => ({
+              sender: message.role === "user" ? "doctor" : "ai",
+              message: message.text,
+            })),
+          });
+        } catch (historySaveError) {
+          console.warn("Could not save assistant history", historySaveError);
+        }
+      }
+
+      try {
+        localStorage.removeItem(draftHistoryKey);
+      } catch (storageError) {
+        console.warn("Could not clear draft assistant history", storageError);
+      }
+
       alert("Consultation enregistrée avec succès !");
       navigate("/");
     } catch (error) {
@@ -379,34 +441,64 @@ export default function NewConsultation() {
     if (!aiChat.trim()) return;
 
     const currentChat = aiChat;
-    const userMessage = { role: "user", text: currentChat };
-    setChatConversation((prev) => [...prev, userMessage]);
-    setAiChat("");
+    // add user message
+    setChatConversation((prev) => [...prev, { role: 'user', text: currentChat }]);
+    setAiChat('');
+
+    // add placeholder AI message to update progressively
+    setChatConversation((prev) => [...prev, { role: 'ai', text: '' }]);
 
     try {
-      const payload = {
-        question: currentChat,
-        context: {
-          patient: patient,
-          motif: form.motif,
-          observations: form.observations,
-          diagnostic: tags,
-          treatments: meds.map(m => ({ name: m.name, instruction: m.instruction })),
-          notes: form.notes,
-        }
+      const pId = String(patient.id || patientId).replace(/\D/g, '');
+      const base = (apiClient.defaults && apiClient.defaults.baseURL) || '';
+      const urlBase = base.replace(/\/$/, '');
+      const url = `${urlBase}/api/ai/assistant/stream?question=${encodeURIComponent(currentChat)}&patient_id=${encodeURIComponent(pId)}`;
+
+      const es = new EventSource(url);
+
+      es.onmessage = (e) => {
+        // standard message contains a chunk of content
+        const chunk = e.data;
+        setChatConversation((prev) => {
+          if (prev.length === 0) return prev;
+          const copy = [...prev];
+          // find last AI message index
+          let lastAiIndex = -1;
+          for (let i = copy.length - 1; i >= 0; i--) {
+            if (copy[i].role === 'ai') {
+              lastAiIndex = i;
+              break;
+            }
+          }
+          if (lastAiIndex === -1) return prev;
+          copy[lastAiIndex] = { ...copy[lastAiIndex], text: (copy[lastAiIndex].text || '') + chunk };
+          return copy;
+        });
       };
-      
-      const response = await apiClient.post("/api/ai/consultation/chat", payload);
-      
-      setChatConversation((prev) => [
-        ...prev,
-        { role: "ai", text: response.data.answer },
-      ]);
+
+      es.addEventListener('done', () => {
+        es.close();
+      });
+
+      es.addEventListener('error', (ev) => {
+        es.close();
+        setChatConversation((prev) => {
+          const copy = [...prev];
+          // replace last AI message with error notice if empty
+          for (let i = copy.length - 1; i >= 0; i--) {
+            if (copy[i].role === 'ai') {
+              if (!copy[i].text) copy[i] = { ...copy[i], text: 'Désolé, une erreur est survenue lors de la communication avec l\'assistant.' };
+              break;
+            }
+          }
+          return copy;
+        });
+      });
     } catch (error) {
-      console.error("Erreur lors de la communication avec l'IA:", error);
+      console.error('Erreur lors de la communication avec l\'IA:', error);
       setChatConversation((prev) => [
         ...prev,
-        { role: "ai", text: "Désolé, une erreur est survenue lors de la communication avec l'assistant." },
+        { role: 'ai', text: "Désolé, une erreur est survenue lors de la communication avec l'assistant." },
       ]);
     }
   };
@@ -586,7 +678,7 @@ export default function NewConsultation() {
       {/* Main grid */}
       <div className="flex gap-5 items-start">
         {/* Left — form sections */}
-        <div className="flex-1 flex flex-col gap-5">
+        <div className="flex-[0.92] flex flex-col gap-5 min-w-0">
           {/* Section 1 — Motif & Observations */}
           <div className="bg-white rounded-2xl border border-gray-100 p-6">
             <div className="flex items-center gap-3 mb-5">
@@ -1228,7 +1320,7 @@ export default function NewConsultation() {
         </div>
 
         {/* Right — AI Assistant panel */}
-        <div className="w-80 flex-shrink-0 sticky top-20">
+        <div className="w-[26rem] flex-shrink-0 sticky top-20">
           <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
             <div className="bg-gradient-to-r from-indigo-500 to-indigo-600 px-5 py-4">
               <div className="flex items-center gap-3">
@@ -1302,6 +1394,61 @@ export default function NewConsultation() {
                     </button>
                   </div>
                 )}
+              </div>
+
+              <div className="pt-4 border-t border-gray-100">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                    Assistant Chat
+                  </p>
+                </div>
+
+                {chatConversation.length > 0 && (
+                  <div className="flex flex-col gap-2 max-h-48 overflow-y-auto mb-3 p-3 bg-gray-50 rounded-xl">
+                    {chatConversation.map((m, i) => (
+                      <div
+                        key={i}
+                        className={`text-sm px-3 py-2 rounded-xl ${
+                          m.role === "user"
+                            ? "bg-indigo-100 text-indigo-700 self-end ml-8"
+                            : "bg-white border border-gray-200 text-gray-600 self-start mr-8"
+                        }`}
+                      >
+                        <span className="font-bold text-xs block mb-1">
+                          {m.role === "user" ? "Médecin" : "Assistant IA"}
+                        </span>
+                        {m.text}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5">
+                  <input
+                    type="text"
+                    value={aiChat}
+                    onChange={(e) => setAiChat(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && sendAiMessage()}
+                    placeholder="Posez une question courte..."
+                    className="flex-1 bg-transparent text-sm text-gray-600 placeholder-gray-300 outline-none"
+                  />
+                  <button
+                    onClick={sendAiMessage}
+                    disabled={!aiChat.trim()}
+                    className="w-8 h-8 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 flex items-center justify-center text-white transition-colors"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                    >
+                      <path d="M5 12h14M12 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -1379,67 +1526,6 @@ export default function NewConsultation() {
               </pre>
             </div>
 
-            {/* Chat section for the resume panel */}
-            <div className="mt-6 pt-4 border-t border-gray-100">
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-sm font-semibold text-gray-700">
-                  💬 Discuter avec l'IA à propos de cette consultation
-                </p>
-              </div>
-
-              {/* Chat messages */}
-              {chatConversation.length > 0 && (
-                <div className="flex flex-col gap-2 max-h-60 overflow-y-auto mb-4 p-3 bg-gray-50 rounded-xl">
-                  {chatConversation.map((m, i) => (
-                    <div
-                      key={i}
-                      className={`text-sm px-3 py-2 rounded-xl ${
-                        m.role === "user"
-                          ? "bg-indigo-100 text-indigo-700 self-end ml-8"
-                          : "bg-white border border-gray-200 text-gray-600 self-start mr-8"
-                      }`}
-                    >
-                      <span className="font-bold text-xs block mb-1">
-                        {m.role === "user" ? "👨‍⚕️ Médecin" : "🤖 IA"}
-                      </span>
-                      {m.text}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Chat input */}
-              <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5">
-                <input
-                  type="text"
-                  value={aiChat}
-                  onChange={(e) => setAiChat(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && sendAiMessage()}
-                  placeholder="Posez une question sur le traitement, les risques, les examens..."
-                  className="flex-1 bg-transparent text-sm text-gray-600 placeholder-gray-300 outline-none"
-                />
-                <button
-                  onClick={sendAiMessage}
-                  disabled={!aiChat.trim()}
-                  className="w-8 h-8 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 flex items-center justify-center text-white transition-colors"
-                >
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                  >
-                    <path d="M5 12h14M12 5l7 7-7 7" />
-                  </svg>
-                </button>
-              </div>
-
-              {/* <p className="text-xs text-gray-400 mt-3 text-center">
-                💡 Astuce: Posez vos questions, puis cliquez sur "Régénérer le résumé" pour intégrer les réponses
-              </p> */}
-            </div>
           </div>
         </div>
       )}

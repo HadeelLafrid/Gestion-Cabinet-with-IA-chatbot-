@@ -151,12 +151,6 @@ def seed(session: Session):
         content="Patient Ahmed Meziane consulted for bacterial angina. Prescribed Paracetamol and Amoxicillin. Follow-up in 1 week.",
     ))
 
-    # ── Chat Messages ──────────────────────────────────────────
-    session.add_all([
-        ChatMessage(consultation_id=consult1.id, sender="doctor", message="Quels sont vos symptômes ?"),
-        ChatMessage(consultation_id=consult1.id, sender="ai",     message="Based on symptoms, likely bacterial infection. Consider antibiotic therapy."),
-    ])
-
     session.commit()
     print("✅ Seed data inserted successfully.")
 
