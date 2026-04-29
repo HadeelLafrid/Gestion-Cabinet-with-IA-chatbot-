@@ -28,22 +28,22 @@ def clear_all(session: Session):
 
 def seed(session: Session):
     # ── User (Doctor) ──────────────────────────────────────────
-    doctor = User(
-        username="dr.Hadil",
-        password=hash_password("password123"),
-        first_name="Karim",
-        last_name="Benali",
-        email="karim.benali@cabinet.dz",
-        phone="0555123456",
-        date_of_birth=date(1980, 5, 15),
-        sex="male",
-        specialization="Médecine Générale",
-        experience=15,
-        languages="Arabe, Français",
-        medical_facility_name="Cabinet Médical Benali",
-        medical_facility_address="12 Rue Didouche Mourad, Alger",
-    )
-    session.add(doctor)
+    # doctor = User(
+    #     username="dr.Hadil",
+    #     password=hash_password("password123"),
+    #     first_name="Karim",
+    #     last_name="Benali",
+    #     email="karim.benali@cabinet.dz",
+    #     phone="0555123456",
+    #     date_of_birth=date(1980, 5, 15),
+    #     sex="male",
+    #     specialization="Médecine Générale",
+    #     experience=15,
+    #     languages="Arabe, Français",
+    #     medical_facility_name="Cabinet Médical Benali",
+    #     medical_facility_address="12 Rue Didouche Mourad, Alger",
+    # )
+    # session.add(doctor)
 
     # ── Patients ───────────────────────────────────────────────
     patient1 = Patient(
@@ -150,12 +150,6 @@ def seed(session: Session):
         type="summary",
         content="Patient Ahmed Meziane consulted for bacterial angina. Prescribed Paracetamol and Amoxicillin. Follow-up in 1 week.",
     ))
-
-    # ── Chat Messages ──────────────────────────────────────────
-    session.add_all([
-        ChatMessage(consultation_id=consult1.id, sender="doctor", message="Quels sont vos symptômes ?"),
-        ChatMessage(consultation_id=consult1.id, sender="ai",     message="Based on symptoms, likely bacterial infection. Consider antibiotic therapy."),
-    ])
 
     session.commit()
     print("✅ Seed data inserted successfully.")
