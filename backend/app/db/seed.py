@@ -5,8 +5,12 @@ from app.models import (
     ConsultationMedicine, ConsultationExam, Payment, AIReport, ChatMessage
 )
 from datetime import datetime, date
-def fake_hash(password: str) -> str:
-    return f"hashed_{password}"
+from passlib.context import CryptContext
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def hash_password(password: str) -> str:
+    return pwd_context.hash(password)
 
 def clear_all(session: Session):
     session.exec(ChatMessage.__table__.delete())
@@ -23,10 +27,9 @@ def clear_all(session: Session):
     print("✅ All data cleared.")
 
 def seed(session: Session):
-    # ── User (Doctor) ──────────────────────────────────────────
     doctor = User(
         username="dr.benali",
-        password=fake_hash("password123"),
+        password=hash_password("password123"),
         first_name="Karim",
         last_name="Benali",
         email="karim.benali@cabinet.dz",
@@ -41,7 +44,6 @@ def seed(session: Session):
     )
     session.add(doctor)
 
-    # ── Patients ───────────────────────────────────────────────
     patient1 = Patient(
         chifa_card_number="123456789",
         first_name="Ahmed",
@@ -77,13 +79,11 @@ def seed(session: Session):
     )
     session.add_all([patient1, patient2])
 
-    # ── Medicines ──────────────────────────────────────────────
     med1 = Medicine(name="Paracétamol 500mg")
     med2 = Medicine(name="Amoxicilline 1g")
     med3 = Medicine(name="Ibuprofène 400mg")
     session.add_all([med1, med2, med3])
 
-    # ── Exams ──────────────────────────────────────────────────
     exam1 = Exam(name="Numération Formule Sanguine (NFS)")
     exam2 = Exam(name="Glycémie à jeun")
     exam3 = Exam(name="Radiographie thoracique")
@@ -97,7 +97,6 @@ def seed(session: Session):
     session.refresh(exam1)
     session.refresh(exam2)
 
-    # ── Consultations ──────────────────────────────────────────
     consult1 = Consultation(
         patient_id=patient1.id,
         consultation_date=datetime(2026, 4, 10, 9, 30),
@@ -120,26 +119,22 @@ def seed(session: Session):
     session.refresh(consult1)
     session.refresh(consult2)
 
-    # ── Consultation Medicines ─────────────────────────────────
     session.add_all([
         ConsultationMedicine(consultation_id=consult1.id, medicine_id=med1.id, dosage="1 comprimé", duration="5 jours"),
         ConsultationMedicine(consultation_id=consult1.id, medicine_id=med2.id, dosage="1 comprimé", duration="7 jours"),
         ConsultationMedicine(consultation_id=consult2.id, medicine_id=med3.id, dosage="1 comprimé", duration="3 jours"),
     ])
 
-    # ── Consultation Exams ─────────────────────────────────────
     session.add_all([
         ConsultationExam(consultation_id=consult1.id, exam_id=exam1.id, notes="Vérifier globules blancs"),
         ConsultationExam(consultation_id=consult2.id, exam_id=exam2.id, notes="À jeun depuis 12h"),
     ])
 
-    # ── Payments ───────────────────────────────────────────────
     session.add_all([
         Payment(consultation_id=consult1.id, amount=1000.0, status="paid"),
         Payment(consultation_id=consult2.id, amount=1000.0, status="pending"),
     ])
 
-    # ── AI Report ──────────────────────────────────────────────
     session.add(AIReport(
         patient_id=patient1.id,
         consultation_id=consult1.id,
@@ -147,7 +142,6 @@ def seed(session: Session):
         content="Patient Ahmed Meziane consulted for bacterial angina. Prescribed Paracetamol and Amoxicillin. Follow-up in 1 week.",
     ))
 
-    # ── Chat Messages ──────────────────────────────────────────
     session.add_all([
         ChatMessage(consultation_id=consult1.id, sender="doctor", message="Quels sont vos symptômes ?"),
         ChatMessage(consultation_id=consult1.id, sender="ai",     message="Based on symptoms, likely bacterial infection. Consider antibiotic therapy."),
