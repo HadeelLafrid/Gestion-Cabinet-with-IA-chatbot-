@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import apiClient from '../../../services/apiClient'
 
@@ -29,6 +29,19 @@ export default function ConsultationSearch() {
   const isDateSearch = date !== ''
   const isNameSearch = query.trim() !== ''
   const hasSearched = searched && (isNameSearch || isDateSearch)
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (query.trim() !== '' || date !== '') {
+        handleSearch()
+      } else {
+        setSearched(false)
+        setPatients([])
+        setConsultations([])
+      }
+    }, 500)
+    return () => clearTimeout(timer)
+  }, [query, date])
 
   const handleSearch = async () => {
     setSearched(true)
@@ -275,15 +288,31 @@ export default function ConsultationSearch() {
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-700">{c.motif || 'N/A'}</td>
                     <td className="px-6 py-4 text-right">
-                      <button
-                        onClick={() => navigate(`/consultation/rapport/${c.id}`)}
-                        className="flex items-center gap-1.5 text-indigo-500 hover:text-indigo-700 text-sm font-medium ml-auto"
-                      >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" />
-                        </svg>
-                        Voir Rapport IA
-                      </button>
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => navigate(`/consultation/rapport/${c.id}`)}
+                          className="flex items-center gap-1.5 text-indigo-500 hover:text-indigo-700 text-sm font-medium"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" />
+                          </svg>
+                          Rapport IA
+                        </button>
+                        {c.patient && (
+                          <>
+                            <span className="text-gray-300">|</span>
+                            <button
+                              onClick={() => navigate(`/consultation/${c.patient.id}`)}
+                              className="flex items-center gap-1.5 text-indigo-600 hover:text-indigo-800 text-sm font-semibold"
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                <path d="M12 5v14M5 12h14" />
+                              </svg>
+                              Nouvelle
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

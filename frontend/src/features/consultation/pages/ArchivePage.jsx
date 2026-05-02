@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import apiClient from '../../../services/apiClient'
 
@@ -51,6 +51,18 @@ export default function ArchivePage() {
   const totalConsultations = filteredPatients.reduce(
     (acc, p) => acc + p.consultations.length, 0
   )
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (query.trim() !== '') {
+        handleSearch()
+      } else {
+        setSearched(false)
+        setArchive([])
+      }
+    }, 500)
+    return () => clearTimeout(timer)
+  }, [query])
 
   const handleSearch = async () => {
     if (!query.trim()) return

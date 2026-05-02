@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
   COMMON_MEDICINES,
   MEDICINE_CATEGORIES,
@@ -69,6 +69,10 @@ const MOCK_MEDICATIONS = [
 export default function NewConsultation() {
   const { patientId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const editId = searchParams.get('edit');
+
   // find id of the patient
   const patientKey = patientId?.startsWith("PT-")
     ? patientId
@@ -106,26 +110,27 @@ export default function NewConsultation() {
           id: p.id,
         });
 
-        try {
-          const medsRes = await apiClient.get(
-            `/consultations/medicines/${patientId}`,
-          );
-          if (medsRes.data) {
-            setMeds(
-              medsRes.data.map((m) => ({
-                id: m.id || Date.now() + Math.random(),
-                name: m.name,
-                instruction: m.dosage || "",
-                icon: "pill",
-              })),
-            );
-          }
-        } catch (err) {
-          console.warn(
-            "Could not fetch medicines for patient or none found",
-            err,
-          );
-        }
+        // Remove fetching medicines from last consultation as requested
+        // try {
+        //   const medsRes = await apiClient.get(
+        //     `/consultations/medicines/${patientId}`,
+        //   );
+        //   if (medsRes.data) {
+        //     setMeds(
+        //       medsRes.data.map((m) => ({
+        //         id: m.id || Date.now() + Math.random(),
+        //         name: m.name,
+        //         instruction: m.dosage || "",
+        //         icon: "pill",
+        //       })),
+        //     );
+        //   }
+        // } catch (err) {
+        //   console.warn(
+        //     "Could not fetch medicines for patient or none found",
+        //     err,
+        //   );
+        // }
 
         try {
           const historyPatientId = parseInt(String(p.id).replace(/\D/g, ""));
@@ -165,9 +170,9 @@ export default function NewConsultation() {
     montant: "",
     modePaiement: "especes",
   });
-  const [tags, setTags] = useState(["I10 - Hypertension"]);
+  const [tags, setTags] = useState([]);
   const [predictedDiagnoses, setPredictedDiagnoses] = useState([]);
-  const [meds, setMeds] = useState(MOCK_MEDICATIONS);
+  const [meds, setMeds] = useState([]);
   const [aiChat, setAiChat] = useState("");
   const [showMedForm, setShowMedForm] = useState(false);
   const [newMed, setNewMed] = useState({
@@ -183,6 +188,41 @@ export default function NewConsultation() {
   const [showResumePanel, setShowResumePanel] = useState(false);
   const [chatConversation, setChatConversation] = useState([]);
   const [chatBaselineIndex, setChatBaselineIndex] = useState(0);
+
+  useEffect(() => {
+    if (editId) {
+      const fetchConsultation = async () => {
+        try {
+          const response = await apiClient.get(`/consultations/${editId}`);
+          const data = response.data;
+          setForm(prev => ({
+            ...prev,
+            motif: data.motif || "",
+            observations: data.clinical_observation || "",
+            severite: data.severity || "",
+            notes: data.additional_notes || "",
+            montant: data.payment?.amount ? String(data.payment.amount) : "",
+          }));
+          if (data.diagnosis) {
+            setTags(data.diagnosis.split(',').map(t => t.trim()).filter(Boolean));
+          } else {
+            setTags([]);
+          }
+          if (data.medicines) {
+            setMeds(data.medicines.map(m => ({
+              id: m.id || Date.now() + Math.random(),
+              name: m.medicine_name || m.name,
+              instruction: m.dosage || "",
+              icon: "pill"
+            })));
+          }
+        } catch (error) {
+          console.error("Error fetching consultation for edit:", error);
+        }
+      };
+      fetchConsultation();
+    }
+  }, [editId]);
 
   useEffect(() => {
     try {
