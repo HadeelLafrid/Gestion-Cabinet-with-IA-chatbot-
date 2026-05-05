@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../hooks/useAuth'
 import { ROUTES } from '../../../constants/routes'
@@ -10,25 +10,45 @@ const specializations = [
 ]
 
 const languages = ['Français', 'Anglais', 'Arabe', 'Espagnol', 'Allemand']
-
 export default function Profile() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const [photo, setPhoto] = useState(null)
+  
+  // ← empty defaults, useEffect will fill them
   const [form, setForm] = useState({
-    firstName:       user?.name?.split(' ')[1] || 'Lafrid',
-    lastName:        user?.name?.split(' ')[0] || 'Hadil',
-    email:           user?.email || 'Hadillafrid@gmail.com',
-    phone:           user?.phone || '+213',
-    dob:             '10.12.1980',
-    sex:             'female',
-    facilityName:    'Arbi si ahmed ',
-    facilityAddress: 'Saad dahlab blida',
-    specialization:  user?.specialty || '',
+    firstName:       '',
+    lastName:        '',
+    email:           '',
+    phone:           '',
+    dob:             '',
+    sex:             'male',
+    facilityName:    '',
+    facilityAddress: '',
+    specialization:  '',
     experience:      '',
     languages:       '',
   })
 
+  useEffect(() => {
+    fetch('http://localhost:8001/api/v1/profile/')
+      .then(res => res.json())
+      .then(data => {
+        setForm({
+          firstName:       data.first_name || '',
+          lastName:        data.last_name || '',
+          email:           data.email || '',
+          phone:           data.phone || '',
+          dob:             data.date_of_birth || '',
+          sex:             data.sex || 'male',
+          facilityName:    data.medical_facility_name || '',
+          facilityAddress: data.medical_facility_address || '',
+          specialization:  data.specialization || '',
+          experience:      data.experience || '',
+          languages:       data.languages || '',
+        })
+      })
+  }, [])
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value })
   }
@@ -41,10 +61,27 @@ export default function Profile() {
     }
   }
 
-  const handleSave = () => {
-    // will connect to API later
+  const handleSave = async () => {
+  const response = await fetch('http://localhost:8001/api/v1/profile/', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      first_name:               form.firstName,
+      last_name:                form.lastName,
+      email:                    form.email,
+      phone:                    form.phone,
+      sex:                      form.sex,
+      specialization:           form.specialization,
+      experience:               parseInt(form.experience) || null,
+      languages:                form.languages,
+      medical_facility_name:    form.facilityName,
+      medical_facility_address: form.facilityAddress,
+    })
+  })
+  if (response.ok) {
     alert('Modifications enregistrées !')
   }
+}
 
   return (
     <div className="max-w-4xl mx-auto">
