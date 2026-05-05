@@ -5,6 +5,8 @@ import {
   MEDICINE_CATEGORIES,
 } from "../../../constants/medicines";
 import apiClient from "../../../services/apiClient";
+import VoiceInputButton from "../../../components/VoiceInputButton";
+
 
 const MOCK_PATIENTS = {
   "PT-4401": {
@@ -319,7 +321,12 @@ export default function NewConsultation() {
         setForm((f) => ({ ...f, severite: mappedSeverity }));
       }
 
-      alert("IA: Analyse terminée. Le diagnostic a été suggéré.");
+      if (diagnosticsResponse.possible_diagnoses && diagnosticsResponse.possible_diagnoses.length > 0) {
+        alert("IA: Analyse terminée. Le diagnostic a été suggéré.");
+      } else {
+        alert("IA: Analyse terminée. Aucune pathologie n'a pu être identifiée avec les données fournies.");
+      }
+
     } catch (error) {
       console.error("AI Prediction error:", error);
       alert(
@@ -750,27 +757,43 @@ export default function NewConsultation() {
                 <label className="text-base font-bold text-gray-700">
                   Motif de consultation
                 </label>
-                <input
-                  type="text"
-                  name="motif"
-                  value={form.motif}
-                  onChange={handle}
-                  placeholder="Ex: Douleurs thoraciques persistantes"
-                  className="bg-gray-50 border border-gray-200 rounded-xl px-5 py-4 text-lg font-medium text-gray-900 placeholder-gray-400 outline-none focus:border-indigo-500 transition-colors shadow-sm"
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    name="motif"
+                    value={form.motif}
+                    onChange={handle}
+                    placeholder="Ex: Douleurs thoraciques persistantes"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-5 pr-14 py-4 text-lg font-medium text-gray-900 placeholder-gray-400 outline-none focus:border-indigo-500 transition-colors shadow-sm"
+                  />
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                    <VoiceInputButton 
+                      onResult={(text) => setForm(f => ({ ...f, motif: f.motif ? `${f.motif} ${text}` : text }))} 
+                    />
+                  </div>
+                </div>
+
               </div>
               <div className="flex flex-col gap-2">
                 <label className="text-base font-bold text-gray-700">
                   Observations cliniques
                 </label>
-                <textarea
-                  name="observations"
-                  value={form.observations}
-                  onChange={handle}
-                  placeholder="Décrivez les symptômes et signes vitaux..."
-                  rows={4}
-                  className="bg-gray-50 border border-gray-200 rounded-xl px-5 py-4 text-lg font-medium text-gray-900 placeholder-gray-400 outline-none focus:border-indigo-500 transition-colors resize-none shadow-sm"
-                />
+                <div className="relative group">
+                  <textarea
+                    name="observations"
+                    value={form.observations}
+                    onChange={handle}
+                    placeholder="Décrivez les symptômes et signes vitaux..."
+                    rows={4}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-5 py-4 text-lg font-medium text-gray-900 placeholder-gray-400 outline-none focus:border-indigo-500 transition-colors resize-none shadow-sm"
+                  />
+                  <div className="absolute right-3 bottom-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <VoiceInputButton 
+                      onResult={(text) => setForm(f => ({ ...f, observations: f.observations ? `${f.observations} ${text}` : text }))} 
+                    />
+                  </div>
+                </div>
+
               </div>
               <button
                 className={`flex items-center gap-2 text-white px-5 py-2.5 rounded-xl w-fit font-medium transition-all shadow-sm
@@ -827,17 +850,11 @@ export default function NewConsultation() {
                     placeholder="Rechercher CIM-10..."
                     className="flex-1 bg-transparent text-lg font-medium text-gray-900 placeholder-gray-400 outline-none"
                   />
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#9ca3af"
-                    strokeWidth="2"
-                  >
-                    <circle cx="11" cy="11" r="8" />
-                    <path d="M21 21l-4.35-4.35" />
-                  </svg>
+                  <VoiceInputButton 
+                    className="mr-2"
+                    onResult={(text) => setForm(f => ({ ...f, diagnostic: f.diagnostic ? `${f.diagnostic} ${text}` : text }))} 
+                  />
+
                 </div>
                 <div className="flex flex-wrap gap-2 mt-1">
                   {tags.map((t) => (
@@ -1281,14 +1298,22 @@ export default function NewConsultation() {
                 Notes Additionnelles
               </h2>
             </div>
-            <textarea
-              name="notes"
-              value={form.notes}
-              onChange={handle}
-              placeholder="Recommandations hygiéno-diététiques, notes pour le secrétariat..."
-              rows={4}
-              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-5 py-4 text-lg font-medium text-gray-900 placeholder-gray-400 outline-none focus:border-indigo-500 transition-colors resize-none shadow-sm"
-            />
+            <div className="relative group">
+              <textarea
+                name="notes"
+                value={form.notes}
+                onChange={handle}
+                placeholder="Recommandations hygiéno-diététiques, notes pour le secrétariat..."
+                rows={4}
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-5 py-4 text-lg font-medium text-gray-900 placeholder-gray-400 outline-none focus:border-indigo-500 transition-colors resize-none shadow-sm"
+              />
+              <div className="absolute right-3 bottom-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                <VoiceInputButton 
+                  onResult={(text) => setForm(f => ({ ...f, notes: f.notes ? `${f.notes} ${text}` : text }))} 
+                />
+              </div>
+            </div>
+
           </div>
 
           {/* Section 5 — Honoraires */}

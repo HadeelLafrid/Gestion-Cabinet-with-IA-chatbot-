@@ -105,6 +105,12 @@ FORMAT JSON STRICT:
         }}
     ],
 }}
+
+NOTE: Si le motif ou les symptômes sont incompréhensibles ou sont du texte aléatoire, retourne :
+{{
+    "severity": "faible",
+    "possible_diagnoses": []
+}}
 """
 
     try:
@@ -117,6 +123,8 @@ FORMAT JSON STRICT:
                         "Tu es un assistant médical prudent. "
                         "Tu ne fais jamais de diagnostic définitif. "
                         "Tu priorises la sécurité du patient. "
+                        "Si l'entrée est incohérente, composée de lettres aléatoires (ex: 'kjdkljlk'), ou n'a aucun sens médical, "
+                        "tu dois retourner une liste vide pour 'possible_diagnoses' et 'faible' pour 'severity'. "
                         "Tu réponds uniquement en JSON valide."
                     )
                 },

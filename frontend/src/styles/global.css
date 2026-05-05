@@ -3,7 +3,7 @@
 @layer base {
   html {
     /* Increase base font size so all 'rem' units scale up */
-    font-size: 112.5%; /* This makes 1rem = 18px (default is 16px) */
+    font-size: 100%; /* This makes 1rem = 18px (default is 16px) */
     color: #111827; /* gray-900 for maximum contrast */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
