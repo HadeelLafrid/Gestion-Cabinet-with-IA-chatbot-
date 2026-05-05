@@ -25,11 +25,11 @@ class ProfileUpdate(BaseModel):
 
 @router.get("/")
 def get_profile(session: Session = Depends(get_session)):
-    return profile_controller.handle_get_profile(session, user_id=2)  # ← 2
+    return profile_controller.handle_get_profile(session)
 
 
 @router.put("/")
 def update_profile(data: ProfileUpdate, session: Session = Depends(get_session)):
     return profile_controller.handle_update_profile(
-        session, user_id=2, data=data.model_dump(exclude_unset=True)  # ← 2
+        session, data=data.model_dump(exclude_unset=True)
     )

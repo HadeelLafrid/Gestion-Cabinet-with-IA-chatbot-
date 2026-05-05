@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../../../hooks/useAuth'
 import { ROUTES } from '../../../constants/routes'
+import apiClient from '../../../services/apiClient'
 
 const specializations = [
   'Cardiologie', 'Neurologie', 'Pédiatrie', 'Chirurgie',
@@ -11,7 +11,6 @@ const specializations = [
 
 const languages = ['Français', 'Anglais', 'Arabe', 'Espagnol', 'Allemand']
 export default function Profile() {
-  const { user } = useAuth()
   const navigate = useNavigate()
   const [photo, setPhoto] = useState(null)
   
@@ -31,9 +30,9 @@ export default function Profile() {
   })
 
   useEffect(() => {
-    fetch('http://localhost:8001/api/v1/profile/')
-      .then(res => res.json())
-      .then(data => {
+    apiClient.get('/api/v1/profile/')
+      .then(res => {
+        const data = res.data
         setForm({
           firstName:       data.first_name || '',
           lastName:        data.last_name || '',
@@ -48,6 +47,7 @@ export default function Profile() {
           languages:       data.languages || '',
         })
       })
+      .catch(err => console.error('Profile fetch error:', err))
   }, [])
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value })
@@ -62,26 +62,25 @@ export default function Profile() {
   }
 
   const handleSave = async () => {
-  const response = await fetch('http://localhost:8001/api/v1/profile/', {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      first_name:               form.firstName,
-      last_name:                form.lastName,
-      email:                    form.email,
-      phone:                    form.phone,
-      sex:                      form.sex,
-      specialization:           form.specialization,
-      experience:               parseInt(form.experience) || null,
-      languages:                form.languages,
-      medical_facility_name:    form.facilityName,
-      medical_facility_address: form.facilityAddress,
-    })
-  })
-  if (response.ok) {
-    alert('Modifications enregistrées !')
+    try {
+      await apiClient.put('/api/v1/profile/', {
+        first_name:               form.firstName,
+        last_name:                form.lastName,
+        email:                    form.email,
+        phone:                    form.phone,
+        sex:                      form.sex,
+        specialization:           form.specialization,
+        experience:               parseInt(form.experience) || null,
+        languages:                form.languages,
+        medical_facility_name:    form.facilityName,
+        medical_facility_address: form.facilityAddress,
+      })
+      alert('Modifications enregistrées !')
+    } catch (err) {
+      console.error('Profile save error:', err)
+      alert('Erreur lors de la sauvegarde.')
+    }
   }
-}
 
   return (
     <div className="max-w-4xl mx-auto">

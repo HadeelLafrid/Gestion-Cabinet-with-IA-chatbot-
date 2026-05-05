@@ -204,9 +204,10 @@ def get_consultations(db: Session, skip: int = 0, limit: int = 100,
                 (Patient.id == int(patient_search))
             )
         else:
+            pattern = f"%{patient_search}%"
             query = query.join(Patient).where(
-                (Patient.first_name.contains(patient_search)) |
-                (Patient.last_name.contains(patient_search)) 
+                Patient.first_name.ilike(pattern) |
+                Patient.last_name.ilike(pattern)
             )
     consultations = db.exec(query.offset(skip).limit(limit)).all()
     

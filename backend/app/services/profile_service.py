@@ -1,9 +1,9 @@
-from sqlmodel import Session
+from sqlmodel import Session, select
 from app.models.user import User
 
 
-def get_profile(session: Session, user_id: int):
-    user = session.get(User, user_id)
+def get_profile(session: Session):
+    user = session.exec(select(User)).first()
     if not user:
         return None
     return {
@@ -24,8 +24,8 @@ def get_profile(session: Session, user_id: int):
     }
 
 
-def update_profile(session: Session, user_id: int, data: dict):
-    user = session.get(User, user_id)
+def update_profile(session: Session, data: dict):
+    user = session.exec(select(User)).first()
     if not user:
         return None
 
@@ -42,4 +42,4 @@ def update_profile(session: Session, user_id: int, data: dict):
     session.add(user)
     session.commit()
     session.refresh(user)
-    return get_profile(session, user_id)
+    return get_profile(session)

@@ -3,15 +3,15 @@ from sqlmodel import Session
 from app.services import profile_service
 
 
-def handle_get_profile(session: Session, user_id: int):
-    profile = profile_service.get_profile(session, user_id)
+def handle_get_profile(session: Session):
+    profile = profile_service.get_profile(session)
     if not profile:
         raise HTTPException(status_code=404, detail="Profil introuvable")
     return profile
 
 
-def handle_update_profile(session: Session, user_id: int, data: dict):
-    profile = profile_service.update_profile(session, user_id, data)
+def handle_update_profile(session: Session, data: dict):
+    profile = profile_service.update_profile(session, data)
     if not profile:
         raise HTTPException(status_code=404, detail="Profil introuvable")
     return profile
