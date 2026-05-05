@@ -1,6 +1,6 @@
 from datetime import date
 from app.schemas.consultation_schema import ConsultationCreate
-from sqlmodel import Session, select, delete
+from sqlmodel import Session, select, delete, or_
 from app.models import (Consultation, Medicine, Exam, Payment,
                         ConsultationMedicine, ConsultationExam, Patient)
 from fastapi import HTTPException
@@ -169,8 +169,63 @@ def update_consultation(db: Session, consultation_id: int, data: ConsultationCre
     consultation = db.get(Consultation, consultation_id)
     if not consultation:
         return None
-    for key, value in data.dict().items():
-        setattr(consultation, key, value)
+
+    consultation.motif = data.motif
+    consultation.clinical_observation = data.clinical_observation
+    consultation.diagnosis = data.diagnosis
+    consultation.severity = data.severity
+    consultation.additional_notes = data.additional_notes
+
+    # Clean up old relationships
+    db.exec(delete(ConsultationMedicine).where(ConsultationMedicine.consultation_id == consultation_id))
+    db.exec(delete(ConsultationExam).where(ConsultationExam.consultation_id == consultation_id))
+    db.exec(delete(Payment).where(Payment.consultation_id == consultation_id))
+    db.commit()
+
+    # Re-insert medicines
+    for medicine_data in data.medicines:
+        medicine = db.exec(                                          
+            select(Medicine).where(Medicine.name == medicine_data.medicine_name)
+        ).first()                                                  
+        if not medicine:
+            medicine = Medicine(name=medicine_data.medicine_name)
+            db.add(medicine)
+            db.commit()
+            db.refresh(medicine)
+        consultation_medicine = ConsultationMedicine(
+            consultation_id=consultation.id,
+            medicine_id=medicine.id,
+            dosage=medicine_data.dosage,
+            duration=medicine_data.duration,
+        )
+        db.add(consultation_medicine)                                
+
+    # Re-insert exams
+    for exam_data in data.exams:
+        exam = db.exec(                                             
+            select(Exam).where(Exam.name == exam_data.exam_name)
+        ).first()                                                    
+        if not exam:
+            exam = Exam(name=exam_data.exam_name)
+            db.add(exam)
+            db.commit()
+            db.refresh(exam)
+        consultation_exam = ConsultationExam(
+            consultation_id=consultation.id,
+            exam_id=exam.id,
+            notes=exam_data.notes,                                   
+        )
+        db.add(consultation_exam)
+
+    # Re-insert payment
+    if data.payment:
+        payment = Payment(
+            consultation_id=consultation.id,
+            amount=data.payment.amount,
+            status=data.payment.status,
+        )
+        db.add(payment)
+
     db.commit()
     db.refresh(consultation)
     return consultation
@@ -199,14 +254,25 @@ def get_consultations(db: Session, skip: int = 0, limit: int = 100,
     if date:
         query = query.where(func.date(Consultation.consultation_date) == date)
     if patient_search:
-        if patient_search.isdigit():
+        # Clean the search term
+        search_term = patient_search.strip()
+        if search_term.upper().startswith("PT-"):
+            search_term = search_term[3:]
+        
+        if search_term.isdigit():
             query = query.join(Patient).where(
-                (Patient.id == int(patient_search))
+                (Patient.id == int(search_term))
             )
         else:
+            # Case-insensitive search on first name, last name, or combined name
+            search_pattern = f"%{search_term.lower()}%"
             query = query.join(Patient).where(
-                (Patient.first_name.contains(patient_search)) |
-                (Patient.last_name.contains(patient_search)) 
+                or_(
+                    func.lower(func.coalesce(Patient.first_name, '')).like(search_pattern),
+                    func.lower(func.coalesce(Patient.last_name, '')).like(search_pattern),
+                    func.lower(func.coalesce(Patient.first_name, '') + " " + func.coalesce(Patient.last_name, '')).like(search_pattern),
+                    func.lower(func.coalesce(Patient.last_name, '') + " " + func.coalesce(Patient.first_name, '')).like(search_pattern)
+                )
             )
     consultations = db.exec(query.offset(skip).limit(limit)).all()
     

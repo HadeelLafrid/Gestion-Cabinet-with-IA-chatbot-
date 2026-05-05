@@ -165,10 +165,58 @@ export default function NewConsultation() {
     montant: "",
     modePaiement: "especes",
   });
-  const [tags, setTags] = useState(["I10 - Hypertension"]);
+  const [tags, setTags] = useState([]);
   const [predictedDiagnoses, setPredictedDiagnoses] = useState([]);
-  const [meds, setMeds] = useState(MOCK_MEDICATIONS);
+  const [meds, setMeds] = useState([]);
   const [aiChat, setAiChat] = useState("");
+
+  useEffect(() => {
+    const fetchConsultation = async () => {
+      const queryParams = new URLSearchParams(window.location.search);
+      const editId = queryParams.get("edit");
+      if (!editId) return;
+
+      try {
+        const res = await apiClient.get(`/consultations/${editId}`);
+        const data = res.data;
+        if (data) {
+          setForm({
+            motif: data.motif || "",
+            observations: data.clinical_observation || "",
+            diagnostic: "",
+            severite: data.severity || "",
+            notes: data.additional_notes || "",
+            montant: data.payment?.amount ? String(data.payment.amount) : "",
+            modePaiement: "especes",
+          });
+          if (data.diagnosis) {
+            setTags(data.diagnosis.split(",").map((d) => d.trim()));
+          } else {
+            setTags([]);
+          }
+
+          const backendMeds = [
+            ...(data.medicines || []).map((m) => ({
+              id: m.id || Date.now() + Math.random(),
+              name: m.medicine_name,
+              instruction: m.dosage || "",
+              icon: "pill",
+            })),
+            ...(data.exams || []).map((e) => ({
+              id: e.id || Date.now() + Math.random(),
+              name: e.exam_name,
+              instruction: e.notes || "",
+              icon: "lab",
+            })),
+          ];
+          setMeds(backendMeds);
+        }
+      } catch (err) {
+        console.error("Error fetching edit consultation", err);
+      }
+    };
+    fetchConsultation();
+  }, [patientId]);
   const [showMedForm, setShowMedForm] = useState(false);
   const [newMed, setNewMed] = useState({
     name: "",
@@ -358,7 +406,15 @@ export default function NewConsultation() {
         payment: form.montant ? { amount: parseFloat(form.montant) } : null,
       };
 
-      const created = await apiClient.post("/consultations/", payload);
+      const queryParams = new URLSearchParams(window.location.search);
+      const editId = queryParams.get("edit");
+
+      let created;
+      if (editId) {
+        created = await apiClient.put(`/consultations/${editId}`, payload);
+      } else {
+        created = await apiClient.post("/consultations/", payload);
+      }
 
       const consultationId = created?.data?.id;
       const sessionMessages = chatConversation.slice(chatBaselineIndex);

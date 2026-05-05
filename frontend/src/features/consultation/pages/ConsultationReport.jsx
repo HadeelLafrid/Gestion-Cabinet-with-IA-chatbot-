@@ -1,46 +1,66 @@
-import { useParams, useNavigate } from 'react-router-dom'
-import { useRef } from 'react'
-
-const MOCK_REPORT = {
-  id:            'EH-9281',
-  date:          '24 Octobre 2023',
-  doctor:        'Dr. Jean Dupont',
-  specialty:     'Cardiologie',
-  patient: {
-    name:        'Jean Dupont',
-    id:          'PT-4402',
-    age:         '31 ans',
-    genre:       'Homme',
-    telephone:   '0550 12 34 56',
-    adresse:     '12 Rue des Oliviers, Alger Centre',
-  },
-  motif:         'Douleurs thoraciques persistantes depuis 3 jours avec essoufflement à l\'effort.',
-  observations:  'Tension artérielle : 155/90 mmHg. Fréquence cardiaque : 88 bpm. Patient conscient, orienté. Légère dyspnée à l\'effort. Auscultation : souffle systolique grade 2.',
-  diagnostics: [
-    { code: 'I10',   label: 'Hypertension artérielle essentielle' },
-    { code: 'R07.9', label: 'Douleur thoracique, sans précision'   },
-  ],
-  severite:      'Modérée',
-  traitements: [
-    { name: 'Lisinopril 10mg',       instruction: '1 comprimé par jour — Le matin', type: 'Médicament' },
-    { name: 'Bilan sanguin complet', instruction: 'À réaliser sous 72h à jeun',     type: 'Examen'     },
-  ],
-  notes:         'Recommander une alimentation pauvre en sel. Éviter les efforts intenses. Contrôle tensionnel dans 2 semaines. Orienter vers cardiologue si pas d\'amélioration.',
-  aiSummary:     'Le patient présente une tension artérielle élevée (155/90) associée à des céphalées matinales et une dyspnée à l\'effort. Les antécédents familiaux d\'hypertension et le profil lipidique suggèrent un risque cardiovasculaire modéré. Un traitement par Lisinopril est initié avec suivi biologique et contrôle tensionnel à 2 semaines.',
-  aiSuggestions: [
-    { title: 'Risque de Diabète Type 2',      desc: 'Antécédents familiaux et IMC à surveiller. Envisager HbA1c.',       color: 'bg-indigo-50 border-indigo-200 text-indigo-600' },
-    { title: 'Interaction Médicamenteuse',    desc: 'Lisinopril + suppléments potassium — surveiller kaliémie.',         color: 'bg-cyan-50 border-cyan-200 text-cyan-700'       },
-    { title: 'Suivi cardiologique recommandé',desc: 'Souffle systolique détecté. Échocardiographie conseillée.',         color: 'bg-amber-50 border-amber-200 text-amber-700'    },
-  ],
-  generatedAt:   '24 Oct 2023 à 14h32',
-}
+import { useState, useEffect, useRef } from 'react'
+import apiClient from '../../../services/apiClient'
 
 export default function ConsultationReport() {
   const { id }   = useParams()
   const navigate = useNavigate()
   const printRef = useRef()
 
-  const report = MOCK_REPORT
+  const [report, setReport] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchReport = async () => {
+      try {
+        const response = await apiClient.get(`/consultations/${id}`)
+        const data = response.data
+
+        // Map API data to match frontend expectations
+        setReport({
+          id: data.id ? `EH-${data.id}` : 'N/A',
+          date: data.consultation_date ? new Date(data.consultation_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }) : 'Inconnue',
+          doctor: 'Dr. Jean Dupont',
+          specialty: 'Cardiologie',
+          patient: {
+            name: data.patient ? `${data.patient.first_name || ''} ${data.patient.last_name || ''}`.trim() : 'Patient Inconnu',
+            id: data.patient?.id ? `PT-${data.patient.id}` : 'N/A',
+            age: data.patient?.age ? `${data.patient.age} ans` : 'N/A',
+            genre: data.patient?.gender === 'male' ? 'Homme' : data.patient?.gender === 'female' ? 'Femme' : 'N/A',
+            telephone: data.patient?.phone || '—',
+            adresse: data.patient?.address || '—',
+          },
+          motif: data.motif || 'Aucun motif spécifié',
+          observations: data.clinical_observation || 'Aucune observation spécifiée',
+          diagnostics: data.diagnosis ? data.diagnosis.split(',').map(d => ({ code: 'CIM-10', label: d.trim() })) : [],
+          severite: data.severity || 'Modérée',
+          traitements: [
+            ...(data.medicines || []).map(m => ({
+              name: m.medicine_name,
+              instruction: m.dosage || '',
+              type: 'Médicament'
+            })),
+            ...(data.exams || []).map(e => ({
+              name: e.exam_name,
+              instruction: e.notes || '',
+              type: 'Examen'
+            }))
+          ],
+          notes: data.additional_notes || 'Aucune note',
+          aiSummary: data.clinical_observation || 'Résumé non disponible.',
+          aiSuggestions: [],
+          generatedAt: data.consultation_date ? new Date(data.consultation_date).toLocaleDateString('fr-FR') : 'N/A',
+        })
+      } catch (error) {
+        console.error("Error fetching consultation report", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (id) {
+      fetchReport()
+    }
+  }, [id])
 
   const handlePrint = () => window.print()
 
@@ -75,6 +95,22 @@ export default function ConsultationReport() {
     a.download = `rapport-${report.id}.html`
     a.click()
     URL.revokeObjectURL(url)
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+      </div>
+    )
+  }
+
+  if (!report) {
+    return (
+      <div className="flex items-center justify-center h-64 text-gray-500 font-medium">
+        Consultation non trouvée
+      </div>
+    )
   }
 
   return (
