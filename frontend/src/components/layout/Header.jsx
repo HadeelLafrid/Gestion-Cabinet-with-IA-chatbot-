@@ -38,7 +38,7 @@ export default function Header() {
           <input
             type="text"
             placeholder="Rechercher un patient ou un acte..."
-            className="flex-1 text-sm text-gray-600 placeholder-gray-400 outline-none bg-transparent"
+            className="flex-1 text-base font-bold text-gray-900 placeholder-gray-500 outline-none bg-transparent"
           />
         </div>
       </div>
@@ -69,10 +69,10 @@ export default function Header() {
             className="flex items-center gap-2 hover:opacity-80 transition-opacity"
           >
             <div className="text-right">
-              <p className="text-sm font-semibold text-gray-700">
+              <p className="text-base font-black text-gray-900">
                 {user?.name || 'Dr. Hadil'}
               </p>
-              <p className="text-xs text-gray-400 uppercase tracking-wide">
+              <p className="text-sm font-black text-gray-500 uppercase tracking-wide">
                 {user?.specialty || 'Cardiologue'}
               </p>
             </div>
@@ -94,10 +94,10 @@ export default function Header() {
 
               {/* Doctor info inside dropdown */}
               <div className="px-4 py-3 border-b border-gray-100">
-                <p className="text-sm font-semibold text-gray-700">
+                <p className="text-base font-black text-gray-900">
                   {user?.name || 'Dr. Jean Dupont'}
                 </p>
-                <p className="text-xs text-gray-400 mt-0.5">
+                <p className="text-sm font-bold text-gray-500 mt-0.5">
                   {user?.specialty || 'Cardiologue'}
                 </p>
               </div>

@@ -47,8 +47,8 @@ export default function PatientList() {
 
       {/* Page title */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-800">Liste des Patients</h1>
-        <p className="text-sm text-gray-400 mt-1">
+        <h1 className="text-4xl font-black text-gray-900">Liste des Patients</h1>
+        <p className="text-lg font-bold text-gray-600 mt-2">
           Gérez votre base de patients et leurs dossiers médicaux.
         </p>
       </div>
@@ -65,7 +65,7 @@ export default function PatientList() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Rechercher un patient par nom..."
-            className="flex-1 text-sm text-gray-600 placeholder-gray-300 outline-none bg-transparent"
+            className="flex-1 text-lg font-bold text-gray-900 placeholder-gray-400 outline-none bg-transparent"
           />
           {query && (
             <button onClick={() => setQuery('')} className="text-gray-300 hover:text-gray-500 transition-colors">
@@ -77,9 +77,9 @@ export default function PatientList() {
         </div>
         <button
           onClick={() => navigate(ROUTES.ADD_PATIENT)}
-          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-5 py-3.5 rounded-2xl transition-colors"
+          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-base font-black px-7 py-4 rounded-2xl transition-all shadow-md active:scale-95"
         >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
             <path d="M12 5v14M5 12h14" />
           </svg>
           Nouveau patient
@@ -111,13 +111,13 @@ export default function PatientList() {
           <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
             <table className="w-full">
               <thead>
-                <tr className="bg-gray-50 border-b border-gray-100">
-                  <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-4">ID</th>
-                  <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-4">Nom & Prénom</th>
-                  <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-4">Sexe</th>
-                  <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-4">Âge</th>
-                  <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-4">Téléphone</th>
-                  <th className="text-right text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-4">Actions</th>
+                <tr className="bg-gray-100 border-b border-gray-200">
+                  <th className="text-left text-sm font-black text-gray-600 uppercase tracking-widest px-6 py-5">ID</th>
+                  <th className="text-left text-sm font-black text-gray-600 uppercase tracking-widest px-6 py-5">Nom & Prénom</th>
+                  <th className="text-left text-sm font-black text-gray-600 uppercase tracking-widest px-6 py-5">Sexe</th>
+                  <th className="text-left text-sm font-black text-gray-600 uppercase tracking-widest px-6 py-5">Âge</th>
+                  <th className="text-left text-sm font-black text-gray-600 uppercase tracking-widest px-6 py-5">Téléphone</th>
+                  <th className="text-right text-sm font-black text-gray-600 uppercase tracking-widest px-6 py-5">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -151,17 +151,17 @@ export default function PatientList() {
                             {getInitials(p.first_name, p.last_name)}
                           </div>
                           <div>
-                            <p className="text-sm font-semibold text-gray-800">
+                            <p className="text-base font-black text-gray-900">
                               {p.first_name} {p.last_name}
                             </p>
-                            <p className="text-xs text-gray-400">{p.phone ?? '—'}</p>
+                            <p className="text-sm font-bold text-gray-500">{p.phone ?? '—'}</p>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         {/* ← fixed: uses gender instead of sexe */}
-                        <span className={`text-xs font-semibold px-4 py-1.5 rounded-full
-                          ${p.gender === 'female' ? 'bg-pink-100 text-pink-500' : 'bg-cyan-100 text-cyan-600'}`}>
+                        <span className={`text-sm font-black px-5 py-2 rounded-full shadow-sm
+                          ${p.gender === 'female' ? 'bg-pink-100 text-pink-700 border border-pink-200' : 'bg-cyan-100 text-cyan-700 border border-cyan-200'}`}>
                           {p.gender === 'female' ? 'Femme' : 'Homme'}
                         </span>
                       </td>

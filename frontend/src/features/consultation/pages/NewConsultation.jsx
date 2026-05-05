@@ -625,7 +625,7 @@ export default function NewConsultation() {
                     <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
                   </svg>
                 </div>
-                <h3 className="text-lg font-bold text-gray-800">
+                <h3 className="text-2xl font-black text-gray-900">
                   {isGeneratingResume
                     ? "Génération du résumé..."
                     : "Résumé de consultation"}
@@ -659,8 +659,8 @@ export default function NewConsultation() {
                   </p>
                 </div>
               ) : (
-                <div className="bg-gray-900 rounded-xl p-6 overflow-auto">
-                  <pre className="text-gray-100 text-sm font-mono leading-relaxed whitespace-pre-wrap font-['Courier_New', 'Monaco', 'Menlo', monospace]">
+                <div className="bg-gray-900 rounded-xl p-8 overflow-auto">
+                  <pre className="text-gray-100 text-lg font-mono leading-relaxed whitespace-pre-wrap font-['Courier_New', 'Monaco', 'Menlo', monospace]">
                     {generatedResume}
                   </pre>
                 </div>
@@ -703,29 +703,29 @@ export default function NewConsultation() {
           </svg>
         </div>
         <div>
-          <p className="text-xs text-gray-400">Patient</p>
-          <p className="text-base font-bold text-gray-800">{patient.name}</p>
+          <p className="text-sm font-bold text-gray-500">Patient</p>
+          <p className="text-xl font-black text-gray-900">{patient.name}</p>
         </div>
-        <div className="w-px h-8 bg-gray-100" />
+        <div className="w-px h-10 bg-gray-200" />
         <div>
-          <p className="text-xs text-gray-400">ID Patient</p>
-          <p className="text-sm font-semibold text-gray-700">{patient.id}</p>
+          <p className="text-sm font-bold text-gray-500">ID Patient</p>
+          <p className="text-lg font-extrabold text-gray-800">{patient.id}</p>
         </div>
-        <div className="w-px h-8 bg-gray-100" />
+        <div className="w-px h-10 bg-gray-200" />
         <div>
-          <p className="text-xs text-gray-400">Âge</p>
-          <p className="text-sm font-semibold text-gray-700">{patient.age}</p>
+          <p className="text-sm font-bold text-gray-500">Âge</p>
+          <p className="text-lg font-extrabold text-gray-800">{patient.age}</p>
         </div>
-        <div className="w-px h-8 bg-gray-100" />
+        <div className="w-px h-10 bg-gray-200" />
         <div>
-          <p className="text-xs text-gray-400">Genre</p>
-          <p className="text-sm font-semibold text-gray-700">{patient.genre}</p>
+          <p className="text-sm font-bold text-gray-500">Genre</p>
+          <p className="text-lg font-extrabold text-gray-800">{patient.genre}</p>
         </div>
         <div className="ml-auto flex items-center gap-3">
-          <span className="text-xs font-semibold bg-indigo-100 text-indigo-600 px-4 py-1.5 rounded-full">
+          <span className="text-sm font-bold bg-indigo-100 text-indigo-700 px-5 py-2 rounded-full shadow-sm">
             Consultation en cours
           </span>
-          <span className="text-xs font-medium bg-gray-100 text-gray-600 px-4 py-1.5 rounded-full">
+          <span className="text-sm font-bold bg-gray-100 text-gray-700 px-5 py-2 rounded-full border border-gray-200">
             Dr. Jean Dupont
           </span>
         </div>
@@ -737,17 +737,17 @@ export default function NewConsultation() {
         <div className="flex-[0.92] flex flex-col gap-5 min-w-0">
           {/* Section 1 — Motif & Observations */}
           <div className="bg-white rounded-2xl border border-gray-100 p-6">
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-bold">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white text-lg font-black shadow-md">
                 1
               </div>
-              <h2 className="text-base font-bold text-gray-800">
+              <h2 className="text-xl font-black text-gray-900">
                 Motif & Observations
               </h2>
             </div>
             <div className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm text-gray-500">
+              <div className="flex flex-col gap-2">
+                <label className="text-base font-bold text-gray-700">
                   Motif de consultation
                 </label>
                 <input
@@ -756,11 +756,11 @@ export default function NewConsultation() {
                   value={form.motif}
                   onChange={handle}
                   placeholder="Ex: Douleurs thoraciques persistantes"
-                  className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-700 placeholder-gray-300 outline-none focus:border-indigo-400 transition-colors"
+                  className="bg-gray-50 border border-gray-200 rounded-xl px-5 py-4 text-lg font-medium text-gray-900 placeholder-gray-400 outline-none focus:border-indigo-500 transition-colors shadow-sm"
                 />
               </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm text-gray-500">
+              <div className="flex flex-col gap-2">
+                <label className="text-base font-bold text-gray-700">
                   Observations cliniques
                 </label>
                 <textarea
@@ -769,7 +769,7 @@ export default function NewConsultation() {
                   onChange={handle}
                   placeholder="Décrivez les symptômes et signes vitaux..."
                   rows={4}
-                  className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-700 placeholder-gray-300 outline-none focus:border-indigo-400 transition-colors resize-none"
+                  className="bg-gray-50 border border-gray-200 rounded-xl px-5 py-4 text-lg font-medium text-gray-900 placeholder-gray-400 outline-none focus:border-indigo-500 transition-colors resize-none shadow-sm"
                 />
               </div>
               <button
@@ -804,17 +804,17 @@ export default function NewConsultation() {
 
           {/* Section 2 — Diagnostic */}
           <div className="bg-white rounded-2xl border border-gray-100 p-6">
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-bold">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white text-lg font-black shadow-md">
                 2
               </div>
-              <h2 className="text-base font-bold text-gray-800">
+              <h2 className="text-xl font-black text-gray-900">
                 Diagnostic Clinique
               </h2>
             </div>
             <div className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm text-gray-500">
+              <div className="flex flex-col gap-2">
+                <label className="text-base font-bold text-gray-700">
                   Diagnostic Principal
                 </label>
                 <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
@@ -825,7 +825,7 @@ export default function NewConsultation() {
                     onChange={handle}
                     onKeyDown={(e) => e.key === "Enter" && addTag()}
                     placeholder="Rechercher CIM-10..."
-                    className="flex-1 bg-transparent text-sm text-gray-700 placeholder-gray-300 outline-none"
+                    className="flex-1 bg-transparent text-lg font-medium text-gray-900 placeholder-gray-400 outline-none"
                   />
                   <svg
                     width="16"
@@ -843,7 +843,7 @@ export default function NewConsultation() {
                   {tags.map((t) => (
                     <span
                       key={t}
-                      className="flex items-center gap-1.5 bg-indigo-100 text-indigo-600 text-xs font-semibold px-3 py-1.5 rounded-full"
+                      className="flex items-center gap-1.5 bg-indigo-100 text-indigo-700 text-sm font-bold px-4 py-2 rounded-full shadow-sm"
                     >
                       {t}
                       <button
@@ -865,15 +865,15 @@ export default function NewConsultation() {
                   ))}
                   <button
                     onClick={addTag}
-                    className="flex items-center gap-1 bg-gray-100 hover:bg-gray-200 text-gray-500 text-xs font-medium px-3 py-1.5 rounded-full transition-colors"
+                    className="flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-bold px-4 py-2 rounded-full transition-colors border border-gray-200"
                   >
                     <svg
-                      width="10"
-                      height="10"
+                      width="12"
+                      height="12"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
-                      strokeWidth="3"
+                      strokeWidth="3.5"
                     >
                       <path d="M12 5v14M5 12h14" />
                     </svg>
@@ -881,8 +881,8 @@ export default function NewConsultation() {
                   </button>
                 </div>
                 {predictedDiagnoses.length > 0 && (
-                  <div className="mt-3 flex gap-2 flex-wrap items-center">
-                    <span className="text-xs text-gray-500 font-medium">
+                  <div className="mt-4 flex gap-2 flex-wrap items-center">
+                    <span className="text-sm text-gray-600 font-bold">
                       Suggestions IA:
                     </span>
                     {predictedDiagnoses.map((pd) => (
@@ -895,15 +895,15 @@ export default function NewConsultation() {
                             prev.filter((x) => x.name !== pd.name),
                           );
                         }}
-                        className="flex items-center gap-1.5 bg-white border border-indigo-200 shadow-sm hover:shadow text-indigo-700 text-xs font-semibold px-3 py-1.5 rounded-full transition-all"
+                        className="flex items-center gap-2 bg-white border-2 border-indigo-100 shadow-sm hover:shadow-md hover:border-indigo-300 text-indigo-700 text-sm font-bold px-4 py-2 rounded-full transition-all"
                       >
                         <svg
-                          width="12"
-                          height="12"
+                          width="14"
+                          height="14"
                           viewBox="0 0 24 24"
                           fill="none"
                           stroke="currentColor"
-                          strokeWidth="2.5"
+                          strokeWidth="3"
                         >
                           <path d="M12 5v14M5 12h14" />
                         </svg>
@@ -913,8 +913,8 @@ export default function NewConsultation() {
                   </div>
                 )}
               </div>
-              <div className="flex flex-col gap-2">
-                <label className="text-sm text-gray-500">Sévérité</label>
+              <div className="flex flex-col gap-3 mt-2">
+                <label className="text-base font-bold text-gray-700">Sévérité</label>
                 <div className="flex items-center gap-6">
                   {["Modéré", "Sévère"].map((s) => (
                     <label
@@ -927,9 +927,9 @@ export default function NewConsultation() {
                         value={s}
                         checked={form.severite === s}
                         onChange={handle}
-                        className="accent-indigo-600"
+                        className="w-5 h-5 accent-indigo-600"
                       />
-                      <span className="text-sm text-gray-600">{s}</span>
+                      <span className="text-lg font-bold text-gray-800">{s}</span>
                     </label>
                   ))}
                 </div>
@@ -939,12 +939,12 @@ export default function NewConsultation() {
 
           {/* Section 3 — Plan de traitement */}
           <div className="bg-white rounded-2xl border border-gray-100 p-6">
-            <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-bold">
+                <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white text-lg font-black shadow-md">
                   3
                 </div>
-                <h2 className="text-base font-bold text-gray-800">
+                <h2 className="text-xl font-black text-gray-900">
                   Plan de traitement
                 </h2>
               </div>
@@ -952,7 +952,7 @@ export default function NewConsultation() {
                 <button
                   onClick={handlePredictMedicines}
                   disabled={isPredictingMedicines}
-                  className={`flex items-center gap-2 text-white px-4 py-2 rounded-xl text-sm font-medium transition-all shadow-sm
+                  className={`flex items-center gap-2 text-white px-6 py-3 rounded-xl text-base font-bold transition-all shadow-md
                     ${isPredictingMedicines ? "bg-indigo-400 cursor-wait" : "bg-indigo-600 hover:bg-indigo-700 active:scale-95 cursor-pointer"}`}
                 >
                   {isPredictingMedicines ? (
@@ -978,7 +978,7 @@ export default function NewConsultation() {
                 </button>
                 <button
                   onClick={() => setShowMedForm(!showMedForm)}
-                  className="flex items-center gap-1.5 text-indigo-500 hover:text-indigo-700 text-sm font-medium transition-colors"
+                  className="flex items-center gap-2 text-indigo-700 hover:text-indigo-900 text-base font-bold transition-colors bg-indigo-50 px-4 py-2 rounded-lg"
                 >
                   <svg
                     width="14"
@@ -1228,10 +1228,12 @@ export default function NewConsultation() {
                       )}
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-bold text-gray-800">
+                      <p className="text-lg font-black text-gray-900">
                         {m.name}
                       </p>
-                      <p className="text-xs text-gray-400">{m.instruction}</p>
+                      <p className="text-base font-bold text-gray-600 mt-0.5">
+                        {m.instruction}
+                      </p>
                     </div>
                     <button className="text-gray-300 hover:text-indigo-500 transition-colors p-1">
                       <svg
@@ -1271,11 +1273,11 @@ export default function NewConsultation() {
 
           {/* Section 4 — Notes */}
           <div className="bg-white rounded-2xl border border-gray-100 p-6">
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-bold">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white text-lg font-black shadow-md">
                 4
               </div>
-              <h2 className="text-base font-bold text-gray-800">
+              <h2 className="text-xl font-black text-gray-900">
                 Notes Additionnelles
               </h2>
             </div>
@@ -1285,24 +1287,24 @@ export default function NewConsultation() {
               onChange={handle}
               placeholder="Recommandations hygiéno-diététiques, notes pour le secrétariat..."
               rows={4}
-              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-700 placeholder-gray-300 outline-none focus:border-indigo-400 transition-colors resize-none"
+              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-5 py-4 text-lg font-medium text-gray-900 placeholder-gray-400 outline-none focus:border-indigo-500 transition-colors resize-none shadow-sm"
             />
           </div>
 
           {/* Section 5 — Honoraires */}
           <div className="bg-white rounded-2xl border border-gray-100 p-6">
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-bold">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white text-lg font-black shadow-md">
                 5
               </div>
-              <h2 className="text-base font-bold text-gray-800">Honoraires</h2>
+              <h2 className="text-xl font-black text-gray-900">Honoraires</h2>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium text-gray-500">
+              <div className="flex flex-col gap-2">
+                <label className="text-base font-bold text-gray-700">
                   Montant (DA) <span className="text-red-400">*</span>
                 </label>
-                <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus-within:border-indigo-400 transition-colors">
+                <div className="flex items-center gap-4 bg-gray-50 border border-gray-200 rounded-xl px-6 py-4 focus-within:border-indigo-500 transition-colors shadow-sm">
                   <input
                     type="number"
                     name="montant"
@@ -1310,9 +1312,9 @@ export default function NewConsultation() {
                     onChange={handle}
                     placeholder="0"
                     min="0"
-                    className="flex-1 bg-transparent text-lg font-bold text-gray-700 placeholder-gray-300 outline-none"
+                    className="flex-1 bg-transparent text-2xl font-black text-gray-900 placeholder-gray-400 outline-none"
                   />
-                  <span className="text-sm font-semibold text-gray-400">
+                  <span className="text-lg font-black text-gray-500">
                     DA
                   </span>
                 </div>
@@ -1324,20 +1326,20 @@ export default function NewConsultation() {
           <div className="flex justify-end gap-3 pb-6">
             <button
               onClick={() => navigate(-1)}
-              className="px-6 py-3 rounded-full border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-50 transition-colors"
+              className="px-8 py-4 rounded-full border-2 border-gray-200 text-gray-700 text-lg font-bold hover:bg-gray-50 transition-colors"
             >
               Annuler
             </button>
             <button
               onClick={generateResume}
               disabled={isGeneratingResume}
-              className={`px-6 py-3 rounded-full border border-indigo-200 text-indigo-700 text-sm font-semibold transition-colors flex items-center gap-2
-                ${isGeneratingResume ? "bg-indigo-50 cursor-wait" : "bg-white hover:bg-indigo-50"}`}
+              className={`px-8 py-4 rounded-full border-2 border-indigo-200 text-indigo-700 text-lg font-black transition-colors flex items-center gap-3
+                ${isGeneratingResume ? "bg-indigo-50 cursor-wait" : "bg-white hover:bg-indigo-50 shadow-sm"}`}
             >
               {isGeneratingResume ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-                  Génération en cours...
+                  <div className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                  Génération...
                 </>
               ) : (
                 <>
@@ -1357,15 +1359,15 @@ export default function NewConsultation() {
             </button>
             <button
               onClick={handleSaveConsultation}
-              className="px-8 py-3 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors flex items-center gap-2"
+              className="px-10 py-4 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white text-lg font-black transition-all shadow-lg active:scale-95 flex items-center gap-3"
             >
               <svg
-                width="15"
-                height="15"
+                width="18"
+                height="18"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
-                strokeWidth="2"
+                strokeWidth="2.5"
               >
                 <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
                 <polyline points="17 21 17 13 7 13 7 21" />
@@ -1404,15 +1406,15 @@ export default function NewConsultation() {
 
             <div className="p-5 flex flex-col gap-5">
               <div>
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-sm font-black text-gray-500 uppercase tracking-widest">
                     Récapitulatif Historique
                   </p>
                 </div>
 
                 {patientRecap ? (
-                  <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4">
-                    <pre className="text-xs text-indigo-900 font-sans leading-relaxed whitespace-pre-wrap">
+                  <div className="bg-indigo-50 border-2 border-indigo-100 rounded-xl p-5">
+                    <pre className="text-sm text-indigo-900 font-sans font-bold leading-relaxed whitespace-pre-wrap">
                       {patientRecap}
                     </pre>
                   </div>
@@ -1453,8 +1455,8 @@ export default function NewConsultation() {
               </div>
 
               <div className="pt-4 border-t border-gray-100">
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-sm font-black text-gray-500 uppercase tracking-widest">
                     Assistant Chat
                   </p>
                 </div>
@@ -1464,13 +1466,13 @@ export default function NewConsultation() {
                     {chatConversation.map((m, i) => (
                       <div
                         key={i}
-                        className={`text-sm px-3 py-2 rounded-xl ${
+                        className={`text-base font-medium px-4 py-3 rounded-2xl ${
                           m.role === "user"
-                            ? "bg-indigo-100 text-indigo-700 self-end ml-8"
-                            : "bg-white border border-gray-200 text-gray-600 self-start mr-8"
+                            ? "bg-indigo-100 text-indigo-800 self-end ml-6 shadow-sm"
+                            : "bg-white border-2 border-gray-100 text-gray-900 self-start mr-6 shadow-sm"
                         }`}
                       >
-                        <span className="font-bold text-xs block mb-1">
+                        <span className="font-black text-sm block mb-1 uppercase tracking-tight">
                           {m.role === "user" ? "Médecin" : "Assistant IA"}
                         </span>
                         {m.text}
@@ -1479,14 +1481,14 @@ export default function NewConsultation() {
                   </div>
                 )}
 
-                <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5">
+                <div className="flex items-center gap-3 bg-gray-50 border-2 border-gray-200 rounded-xl px-4 py-3 shadow-inner">
                   <input
                     type="text"
                     value={aiChat}
                     onChange={(e) => setAiChat(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && sendAiMessage()}
-                    placeholder="Posez une question courte..."
-                    className="flex-1 bg-transparent text-sm text-gray-600 placeholder-gray-300 outline-none"
+                    placeholder="Posez une question..."
+                    className="flex-1 bg-transparent text-base font-bold text-gray-900 placeholder-gray-400 outline-none"
                   />
                   <button
                     onClick={sendAiMessage}
@@ -1575,9 +1577,9 @@ export default function NewConsultation() {
             </div>
           </div>
 
-          <div className="p-6">
-            <div className="bg-gray-900 rounded-xl p-6 overflow-auto max-h-[500px]">
-              <pre className="text-gray-100 text-sm font-mono leading-relaxed whitespace-pre-wrap font-['Courier_New', 'Monaco', 'Menlo', monospace]">
+          <div className="p-8">
+            <div className="bg-gray-900 rounded-2xl p-10 overflow-auto max-h-[600px]">
+              <pre className="text-gray-100 text-xl font-mono font-bold leading-loose whitespace-pre-wrap">
                 {generatedResume}
               </pre>
             </div>

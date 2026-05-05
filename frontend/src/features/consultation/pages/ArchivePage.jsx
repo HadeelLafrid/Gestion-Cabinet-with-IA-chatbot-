@@ -171,10 +171,10 @@ export default function ArchivePage() {
     <div className="flex flex-col gap-6">
       {/* Page title */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-800">
+        <h1 className="text-4xl font-extrabold text-gray-900">
           Archive des Consultations
         </h1>
-        <p className="text-sm text-gray-400 mt-1">
+        <p className="text-base text-gray-600 mt-2">
           Parcourez l'historique complet des consultations par patient.
         </p>
       </div>
@@ -183,7 +183,7 @@ export default function ArchivePage() {
       <div className="bg-white rounded-2xl border border-gray-100 p-6">
         <div className="flex items-end gap-4">
           <div className="flex flex-col gap-1.5 flex-1 max-w-xl">
-            <label className="text-sm font-medium text-gray-600">
+            <label className="text-base font-bold text-gray-800">
               Rechercher un patient
             </label>
             <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
@@ -204,7 +204,7 @@ export default function ArchivePage() {
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch(query)}
                 placeholder="Nom du patient ou ID..."
-                className="flex-1 bg-transparent text-sm text-gray-600 placeholder-gray-300 outline-none"
+                className="flex-1 bg-transparent text-lg font-medium text-gray-900 placeholder-gray-400 outline-none"
               />
               {query && (
                 <button
@@ -231,7 +231,7 @@ export default function ArchivePage() {
           <button
             onClick={handleSearch}
             disabled={!query.trim()}
-            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold px-6 py-3 rounded-xl transition-colors"
+            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-base font-bold px-8 py-3.5 rounded-xl transition-colors shadow-sm"
           >
             <svg
               width="16"
@@ -266,10 +266,10 @@ export default function ArchivePage() {
               <path d="M9 13h6M9 17h4" />
             </svg>
           </div>
-          <p className="text-gray-500 font-medium">
+          <p className="text-gray-600 font-bold text-lg">
             Recherchez un patient pour voir son historique
           </p>
-          <p className="text-gray-400 text-sm">
+          <p className="text-gray-500 text-base">
             Toutes les consultations archivées seront affichées
           </p>
         </div>
@@ -291,12 +291,12 @@ export default function ArchivePage() {
           {/* Summary */}
           {!loading && (
             <div className="flex items-center justify-between">
-              <p className="text-sm text-gray-500">
-                <span className="font-semibold text-gray-700">
+              <p className="text-base text-gray-600 font-medium">
+                <span className="font-bold text-gray-900">
                   {filteredPatients.length}
                 </span>{" "}
                 patient{filteredPatients.length !== 1 ? "s" : ""} —{" "}
-                <span className="font-semibold text-indigo-600">
+                <span className="font-bold text-indigo-700">
                   {totalConsultations}
                 </span>{" "}
                 consultation{totalConsultations !== 1 ? "s" : ""} archivée
@@ -319,9 +319,9 @@ export default function ArchivePage() {
                 <circle cx="11" cy="11" r="8" />
                 <path d="M21 21l-4.35-4.35" />
               </svg>
-              <p className="text-sm text-gray-400">
+              <p className="text-base font-bold text-gray-600">
                 Aucun patient trouvé pour{" "}
-                <span className="font-medium text-gray-600">"{query}"</span>
+                <span className="font-extrabold text-gray-900">"{query}"</span>
               </p>
             </div>
           )}
@@ -349,15 +349,15 @@ export default function ArchivePage() {
                       {getInitials(patient.patientName)}
                     </div>
                     <div className="flex-1">
-                      <p className="font-bold text-gray-800 text-base">
+                      <p className="font-extrabold text-gray-900 text-xl">
                         {patient.patientName}
                       </p>
-                      <p className="text-xs text-gray-400 mt-0.5">
+                      <p className="text-base text-gray-600 font-bold mt-0.5">
                         {patient.patientId} · {patient.age} · {patient.genre}
                       </p>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-xs font-bold bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-full">
+                      <span className="text-sm font-extrabold bg-indigo-50 text-indigo-700 px-4 py-2 rounded-full shadow-sm">
                         {patient.consultations.length} consultation
                         {patient.consultations.length > 1 ? "s" : ""}
                       </span>
@@ -398,20 +398,20 @@ export default function ArchivePage() {
                       ) : (
                         <table className="w-full">
                           <thead>
-                            <tr className="bg-gray-50">
-                              <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-3">
+                            <tr className="bg-gray-50 border-b border-gray-100">
+                              <th className="text-left text-sm font-bold text-gray-700 uppercase tracking-wider px-6 py-4">
                                 ID
                               </th>
-                              <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-3">
+                              <th className="text-left text-sm font-bold text-gray-700 uppercase tracking-wider px-6 py-4">
                                 Date
                               </th>
-                              <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-3">
+                              <th className="text-left text-sm font-bold text-gray-700 uppercase tracking-wider px-6 py-4">
                                 Motif
                               </th>
-                              <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-3">
+                              <th className="text-left text-sm font-bold text-gray-700 uppercase tracking-wider px-6 py-4">
                                 Diagnostic
                               </th>
-                              <th className="text-right text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-3">
+                              <th className="text-right text-sm font-bold text-gray-700 uppercase tracking-wider px-6 py-4">
                                 Actions
                               </th>
                             </tr>
@@ -422,19 +422,19 @@ export default function ArchivePage() {
                                 key={c.id}
                                 className="border-t border-gray-50 hover:bg-indigo-50/20 transition-colors"
                               >
-                                <td className="px-6 py-4">
-                                  <span className="text-sm font-semibold text-indigo-500">
+                                <td className="px-6 py-5">
+                                  <span className="text-base font-bold text-indigo-600">
                                     #{c.id}
                                   </span>
                                 </td>
-                                <td className="px-6 py-4 text-sm text-gray-600 whitespace-nowrap">
+                                <td className="px-6 py-5 text-base font-medium text-gray-900 whitespace-nowrap">
                                   {c.date}
                                 </td>
-                                <td className="px-6 py-4 text-sm text-gray-700">
+                                <td className="px-6 py-5 text-base font-medium text-gray-800">
                                   {c.motif}
                                 </td>
-                                <td className="px-6 py-4">
-                                  <span className="text-xs font-medium bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full">
+                                <td className="px-6 py-5">
+                                  <span className="text-sm font-bold bg-indigo-50 text-indigo-700 px-4 py-1.5 rounded-full">
                                     {c.diagnostic}
                                   </span>
                                 </td>
@@ -447,15 +447,15 @@ export default function ArchivePage() {
                                           `/consultation/rapport/${c.id}`,
                                         )
                                       }
-                                      className="flex items-center gap-1.5 text-indigo-400 hover:text-indigo-600 text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-indigo-50 transition-colors"
+                                      className="flex items-center gap-1.5 text-indigo-600 hover:text-indigo-800 text-sm font-bold px-4 py-2 rounded-lg bg-indigo-50 transition-colors"
                                     >
                                       <svg
-                                        width="13"
-                                        height="13"
+                                        width="14"
+                                        height="14"
                                         viewBox="0 0 24 24"
                                         fill="none"
                                         stroke="currentColor"
-                                        strokeWidth="2"
+                                        strokeWidth="2.5"
                                       >
                                         <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
                                       </svg>
@@ -474,15 +474,15 @@ export default function ArchivePage() {
                                           `/consultation/${getNumericId(patient.patientId)}?edit=${c.id}`,
                                         )
                                       }
-                                      className="flex items-center gap-1.5 text-amber-400 hover:text-amber-600 text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-amber-50 transition-colors"
+                                      className="flex items-center gap-1.5 text-amber-700 hover:text-amber-900 text-sm font-bold px-4 py-2 rounded-lg bg-amber-50 transition-colors"
                                     >
                                       <svg
-                                        width="13"
-                                        height="13"
+                                        width="14"
+                                        height="14"
                                         viewBox="0 0 24 24"
                                         fill="none"
                                         stroke="currentColor"
-                                        strokeWidth="2"
+                                        strokeWidth="2.5"
                                       >
                                         <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
                                         <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
@@ -504,15 +504,15 @@ export default function ArchivePage() {
                                           patientName: patient.patientName,
                                         })
                                       }
-                                      className="flex items-center gap-1.5 text-red-400 hover:text-red-600 text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors"
+                                      className="flex items-center gap-1.5 text-red-700 hover:text-red-900 text-sm font-bold px-4 py-2 rounded-lg bg-red-50 transition-colors"
                                     >
                                       <svg
-                                        width="13"
-                                        height="13"
+                                        width="14"
+                                        height="14"
                                         viewBox="0 0 24 24"
                                         fill="none"
                                         stroke="currentColor"
-                                        strokeWidth="2"
+                                        strokeWidth="2.5"
                                       >
                                         <polyline points="3 6 5 6 21 6" />
                                         <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" />
@@ -529,10 +529,10 @@ export default function ArchivePage() {
                       )}
 
                       {/* Patient footer */}
-                      <div className="px-6 py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
-                        <p className="text-xs text-gray-400">
+                      <div className="px-6 py-5 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
+                        <p className="text-sm font-bold text-gray-500">
                           Dernière consultation :{" "}
-                          <span className="font-medium text-gray-600">
+                          <span className="font-extrabold text-gray-900">
                             {patient.consultations[0]?.date || "—"}
                           </span>
                         </p>
@@ -543,15 +543,15 @@ export default function ArchivePage() {
                                 `/patients/${getNumericId(patient.patientId)}`,
                               )
                             }
-                            className="flex items-center gap-1.5 border border-gray-200 text-gray-500 hover:bg-gray-100 text-xs font-medium px-3 py-2 rounded-full transition-colors"
+                            className="flex items-center gap-1.5 border-2 border-gray-200 text-gray-700 hover:bg-gray-100 text-sm font-bold px-5 py-2.5 rounded-full transition-colors"
                           >
                             <svg
-                              width="12"
-                              height="12"
+                              width="14"
+                              height="14"
                               viewBox="0 0 24 24"
                               fill="none"
                               stroke="currentColor"
-                              strokeWidth="2"
+                              strokeWidth="2.5"
                             >
                               <circle cx="12" cy="8" r="4" />
                               <path d="M4 20a8 8 0 0116 0" />
@@ -564,15 +564,15 @@ export default function ArchivePage() {
                                 `/consultation/${getNumericId(patient.patientId)}`,
                               )
                             }
-                            className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-3 py-2 rounded-full transition-colors"
+                            className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-base font-bold px-6 py-2.5 rounded-full transition-colors shadow-md"
                           >
                             <svg
-                              width="12"
-                              height="12"
+                              width="18"
+                              height="18"
                               viewBox="0 0 24 24"
                               fill="none"
                               stroke="currentColor"
-                              strokeWidth="2.5"
+                              strokeWidth="3"
                             >
                               <path d="M12 5v14M5 12h14" />
                             </svg>
@@ -609,36 +609,36 @@ export default function ArchivePage() {
               </div>
 
               <div>
-                <h3 className="text-lg font-bold text-gray-800 mb-1">
+                <h3 className="text-2xl font-black text-gray-900 mb-2">
                   Supprimer la consultation ?
                 </h3>
-                <p className="text-sm text-gray-500">
+                <p className="text-lg text-gray-700 leading-relaxed">
                   Vous êtes sur le point de supprimer la consultation{" "}
-                  <span className="font-semibold text-gray-700">
+                  <span className="font-black text-red-600">
                     #{deleteTarget.id}
                   </span>{" "}
                   du{" "}
-                  <span className="font-semibold text-gray-700">
+                  <span className="font-black text-gray-900">
                     {deleteTarget.date}
                   </span>{" "}
                   pour{" "}
-                  <span className="font-semibold text-gray-700">
+                  <span className="font-black text-gray-900">
                     {deleteTarget.patientName}
                   </span>
                   . Cette action est irréversible.
                 </p>
               </div>
 
-              <div className="flex gap-3 w-full mt-2">
+              <div className="flex gap-4 w-full mt-4">
                 <button
                   onClick={() => setDeleteTarget(null)}
-                  className="flex-1 py-3 rounded-full border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-50 transition-colors"
+                  className="flex-1 py-4 rounded-full border-2 border-gray-200 text-gray-700 text-base font-bold hover:bg-gray-50 transition-colors"
                 >
                   Annuler
                 </button>
                 <button
                   onClick={confirmDelete}
-                  className="flex-1 py-3 rounded-full bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition-colors"
+                  className="flex-1 py-4 rounded-full bg-red-600 hover:bg-red-700 text-white text-base font-black transition-colors shadow-md"
                 >
                   Supprimer
                 </button>

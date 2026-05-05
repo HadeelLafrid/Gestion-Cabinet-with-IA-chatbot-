@@ -99,10 +99,10 @@ export default function ConsultationSearch() {
     <div className="flex flex-col gap-6">
       {/* Title */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-800">
+        <h1 className="text-4xl font-extrabold text-gray-900">
           Nouvelle Consultation
         </h1>
-        <p className="text-sm text-gray-400 mt-1">
+        <p className="text-base text-gray-600 mt-2">
           Recherchez un patient pour démarrer une consultation.
         </p>
       </div>
@@ -111,8 +111,8 @@ export default function ConsultationSearch() {
       <div className="bg-white rounded-2xl border border-gray-100 p-6">
         <div className="flex items-end gap-4">
           {/* Name search */}
-          <div className="flex flex-col gap-1.5 flex-1">
-            <label className="text-sm font-medium text-gray-600">Patient</label>
+          <div className="flex flex-col gap-2 flex-1">
+            <label className="text-base font-bold text-gray-800">Patient</label>
             <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
               <svg
                 width="16"
@@ -131,7 +131,7 @@ export default function ConsultationSearch() {
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Nom du patient..."
-                className="flex-1 bg-transparent text-sm text-gray-600 placeholder-gray-300 outline-none"
+                className="flex-1 bg-transparent text-lg font-medium text-gray-900 placeholder-gray-400 outline-none"
               />
               {query && (
                 <button
@@ -156,22 +156,22 @@ export default function ConsultationSearch() {
           </div>
 
           {/* Date search */}
-          <div className="flex flex-col gap-1.5 w-48">
-            <label className="text-sm font-medium text-gray-600">
+          <div className="flex flex-col gap-2 w-56">
+            <label className="text-base font-bold text-gray-800">
               Date de consultation
             </label>
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-600 outline-none focus:border-indigo-400 transition-colors"
+              className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-lg font-medium text-gray-900 outline-none focus:border-indigo-500 transition-colors"
             />
           </div>
 
           {/* Search button */}
           <button
             onClick={handleSearch}
-            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-6 py-3 rounded-xl transition-colors"
+            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-base font-bold px-8 py-3.5 rounded-xl transition-colors shadow-sm"
           >
             <svg
               width="16"
@@ -197,7 +197,7 @@ export default function ConsultationSearch() {
                 setPatients([]);
                 setConsultations([]);
               }}
-              className="px-4 py-3 rounded-xl border border-gray-200 text-gray-500 text-sm hover:bg-gray-50 transition-colors"
+              className="px-6 py-3.5 rounded-xl border border-gray-300 text-gray-700 text-base font-bold hover:bg-gray-50 transition-colors"
             >
               Effacer
             </button>
@@ -221,10 +221,10 @@ export default function ConsultationSearch() {
               <path d="M4 20a8 8 0 0116 0" />
             </svg>
           </div>
-          <p className="text-gray-500 font-medium">
+          <p className="text-gray-600 font-bold text-lg">
             Recherchez un patient pour démarrer
           </p>
-          <p className="text-gray-400 text-sm">
+          <p className="text-gray-500 text-base">
             Ou filtrez par date pour voir les consultations du jour
           </p>
         </div>
@@ -270,11 +270,11 @@ export default function ConsultationSearch() {
 
       {/* Results — patient name search */}
       {hasSearched && isNameSearch && !isDateSearch && !loading && (
-        <div className="flex flex-col gap-3">
-          <p className="text-sm text-gray-400">
+        <div className="flex flex-col gap-4">
+          <p className="text-base text-gray-600 font-medium">
             {patients.length} patient{patients.length !== 1 ? "s" : ""} trouvé
             {patients.length !== 1 ? "s" : ""} pour{" "}
-            <span className="text-indigo-600 font-medium">"{query}"</span>
+            <span className="text-indigo-700 font-bold">"{query}"</span>
           </p>
 
           {patients.length === 0 ? (
@@ -290,7 +290,7 @@ export default function ConsultationSearch() {
                 <circle cx="12" cy="8" r="4" />
                 <path d="M4 20a8 8 0 0116 0" />
               </svg>
-              <p className="text-sm text-gray-400">Aucun patient trouvé</p>
+              <p className="text-base font-bold text-gray-600">Aucun patient trouvé</p>
             </div>
           ) : (
             <div className="flex flex-col gap-3">
@@ -305,10 +305,10 @@ export default function ConsultationSearch() {
                     {getInitials(`${p.first_name} ${p.last_name}`)}
                   </div>
                   <div className="flex-1">
-                    <p className="font-semibold text-gray-800">
+                    <p className="font-bold text-gray-900 text-xl">
                       {p.first_name} {p.last_name}
                     </p>
-                    <p className="text-xs text-gray-400">
+                    <p className="text-base text-gray-600 font-medium mt-0.5">
                       #{p.id} · {p.age} ans ·{" "}
                       {p.gender === "M" || p.gender === "male"
                         ? "Homme"
@@ -316,11 +316,11 @@ export default function ConsultationSearch() {
                     </p>
                   </div>
                   {p.last_consult && (
-                    <div className="text-right mr-4">
-                      <p className="text-xs text-gray-400">
+                    <div className="text-right mr-6">
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
                         Dernière consultation
                       </p>
-                      <p className="text-xs font-medium text-gray-600">
+                      <p className="text-base font-bold text-gray-900">
                         {p.last_consult.date}
                       </p>
                     </div>
@@ -328,15 +328,15 @@ export default function ConsultationSearch() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => navigate(`/consultation/rapport/${p.id}`)}
-                      className="flex items-center gap-1.5 border border-indigo-200 text-indigo-500 hover:bg-indigo-50 text-xs font-medium px-4 py-2 rounded-full transition-colors"
+                      className="flex items-center gap-1.5 border-2 border-indigo-100 text-indigo-600 hover:bg-indigo-50 text-sm font-bold px-5 py-2.5 rounded-full transition-colors"
                     >
                       <svg
-                        width="13"
-                        height="13"
+                        width="14"
+                        height="14"
                         viewBox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"
-                        strokeWidth="2"
+                        strokeWidth="2.5"
                       >
                         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                         <circle cx="12" cy="12" r="3" />
@@ -345,15 +345,15 @@ export default function ConsultationSearch() {
                     </button>
                     <button
                       onClick={() => navigate(`/consultation/${p.id}`)}
-                      className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-sm font-semibold px-5 py-2.5 rounded-full transition-all"
+                      className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-base font-bold px-6 py-3 rounded-full transition-all shadow-md"
                     >
                       <svg
-                        width="16"
-                        height="16"
+                        width="18"
+                        height="18"
                         viewBox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"
-                        strokeWidth="2.5"
+                        strokeWidth="3"
                       >
                         <path d="M12 5v14M5 12h14" />
                       </svg>
@@ -370,11 +370,11 @@ export default function ConsultationSearch() {
       {/* Results — date search */}
       {hasSearched && isDateSearch && !loading && (
         <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-50">
-            <h2 className="text-base font-bold text-indigo-600">
+          <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+            <h2 className="text-xl font-extrabold text-gray-900">
               Résultats de recherche
             </h2>
-            <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-4 py-1.5 rounded-full uppercase tracking-wide">
+            <span className="text-sm font-bold text-indigo-700 bg-indigo-50 px-5 py-2 rounded-full uppercase tracking-wider">
               {consultations.length} consultations trouvées
             </span>
           </div>
@@ -392,27 +392,27 @@ export default function ConsultationSearch() {
                 <rect x="3" y="4" width="18" height="18" rx="2" />
                 <path d="M16 2v4M8 2v4M3 10h18" />
               </svg>
-              <p className="text-sm text-gray-400">
+              <p className="text-base font-bold text-gray-600">
                 Aucune consultation ce jour-là
               </p>
             </div>
           ) : (
             <table className="w-full">
               <thead>
-                <tr className="bg-gray-50">
-                  <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-3">
+                <tr className="bg-gray-50 border-b border-gray-100">
+                  <th className="text-left text-sm font-bold text-gray-700 uppercase tracking-wider px-6 py-4">
                     ID
                   </th>
-                  <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-3">
+                  <th className="text-left text-sm font-bold text-gray-700 uppercase tracking-wider px-6 py-4">
                     Date
                   </th>
-                  <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-3">
+                  <th className="text-left text-sm font-bold text-gray-700 uppercase tracking-wider px-6 py-4">
                     Patient
                   </th>
-                  <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-3">
+                  <th className="text-left text-sm font-bold text-gray-700 uppercase tracking-wider px-6 py-4">
                     Motif
                   </th>
-                  <th className="text-right text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-3">
+                  <th className="text-right text-sm font-bold text-gray-700 uppercase tracking-wider px-6 py-4">
                     Actions
                   </th>
                 </tr>
@@ -423,57 +423,57 @@ export default function ConsultationSearch() {
                     key={c.id}
                     className="border-t border-gray-50 hover:bg-gray-50 transition-colors"
                   >
-                    <td className="px-6 py-4">
-                      <span className="text-sm font-semibold text-indigo-500">
+                    <td className="px-6 py-5">
+                      <span className="text-base font-bold text-indigo-600">
                         #{c.id}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
+                    <td className="px-6 py-5 text-base font-medium text-gray-900">
                       {new Date(c.consultation_date).toLocaleDateString(
                         "fr-FR",
                         { day: "2-digit", month: "short", year: "numeric" },
                       )}
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-5">
                       {c.patient ? (
                         <div className="flex items-center gap-3">
                           <div
-                            className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${getColor(c.patient.id)}`}
+                            className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${getColor(c.patient.id)}`}
                           >
                             {getInitials(
                               `${c.patient.first_name} ${c.patient.last_name}`,
                             )}
                           </div>
-                          <span className="text-sm text-gray-700">
+                          <span className="text-base font-bold text-gray-900">
                             {c.patient.first_name} {c.patient.last_name}
                           </span>
                         </div>
                       ) : (
-                        "N/A"
+                        <span className="text-gray-400 font-medium">N/A</span>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-700">
+                    <td className="px-6 py-5 text-base font-medium text-gray-800">
                       {c.motif || "N/A"}
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-6 py-5 text-right">
                       <button
                         onClick={() =>
                           navigate(`/consultation/rapport/${c.id}`)
                         }
-                        className="flex items-center gap-1.5 text-indigo-500 hover:text-indigo-700 text-sm font-medium ml-auto"
+                        className="flex items-center gap-2 text-indigo-600 hover:text-indigo-800 text-base font-bold ml-auto bg-indigo-50 px-4 py-2 rounded-lg transition-colors"
                       >
                         <svg
-                          width="14"
-                          height="14"
+                          width="16"
+                          height="16"
                           viewBox="0 0 24 24"
                           fill="none"
                           stroke="currentColor"
-                          strokeWidth="2"
+                          strokeWidth="2.5"
                         >
                           <circle cx="12" cy="12" r="10" />
                           <path d="M12 8v4M12 16h.01" />
                         </svg>
-                        Voir Rapport IA
+                        Rapport IA
                       </button>
                     </td>
                   </tr>

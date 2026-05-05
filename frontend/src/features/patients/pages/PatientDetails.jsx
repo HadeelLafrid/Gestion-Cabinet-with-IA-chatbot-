@@ -11,18 +11,18 @@ function SectionHeader({ icon, title, color = 'bg-indigo-50 text-indigo-500' }) 
       <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${color}`}>
         {icon}
       </div>
-      <h2 className="text-lg font-bold text-gray-800">{title}</h2>
+      <h2 className="text-2xl font-black text-gray-900">{title}</h2>
     </div>
   )
 }
 
 function FieldBox({ label, value, unit }) {
   return (
-    <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">{label}</label>
-      <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-4 py-3">
-        <span className="text-sm text-gray-700 flex-1">{value}</span>
-        {unit && <span className="text-xs text-gray-400">{unit}</span>}
+    <div className="flex flex-col gap-2">
+      <label className="text-sm font-black text-gray-500 uppercase tracking-widest">{label}</label>
+      <div className="flex items-center gap-3 bg-gray-50 border border-gray-100 rounded-xl px-5 py-4 shadow-sm">
+        <span className="text-lg font-bold text-gray-900 flex-1">{value}</span>
+        {unit && <span className="text-base font-black text-gray-400">{unit}</span>}
       </div>
     </div>
   )
@@ -103,26 +103,26 @@ export default function PatientDetails() {
       {/* Page header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">
+          <h1 className="text-3xl font-black text-gray-900">
             Dossier Patient :{' '}
-            <span className="text-indigo-500">{patient.prenom} {patient.nom}</span>
+            <span className="text-indigo-600 underline decoration-indigo-200 decoration-4 underline-offset-4">{patient.prenom} {patient.nom}</span>
           </h1>
-          <p className="text-sm text-gray-400 mt-1">
+          <p className="text-lg font-bold text-gray-500 mt-2">
             Dernière mise à jour : {patient.lastUpdate}
           </p>
         </div>
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate(ROUTES.PATIENTS)}
-            className="px-6 py-2.5 rounded-full border border-gray-200 bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm font-medium transition-colors"
+            className="px-8 py-3.5 rounded-full border-2 border-gray-200 bg-gray-100 hover:bg-gray-200 text-gray-700 text-base font-bold transition-all shadow-sm"
           >
             Annuler
           </button>
           <button
             onClick={() => alert('Enregistré !')}
-            className="px-6 py-2.5 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors flex items-center gap-2"
+            className="px-8 py-3.5 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white text-base font-black transition-all shadow-lg flex items-center gap-3 active:scale-95"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
               <polyline points="17 21 17 13 7 13 7 21" />
             </svg>
@@ -174,9 +174,9 @@ export default function PatientDetails() {
               <FieldBox label="Taille" value={patient.taille} unit="cm"  />
             </div>
             {imc && (
-              <div className="mt-4 bg-cyan-50 border border-cyan-100 rounded-xl px-4 py-3 flex items-center justify-between">
-                <span className="text-xs font-bold text-cyan-600 uppercase tracking-widest">IMC Calculé</span>
-                <span className="text-lg font-bold text-cyan-700">{imc}</span>
+              <div className="mt-5 bg-cyan-50 border-2 border-cyan-100 rounded-2xl px-6 py-5 flex items-center justify-between shadow-sm">
+                <span className="text-sm font-black text-cyan-600 uppercase tracking-widest">IMC Calculé</span>
+                <span className="text-3xl font-black text-cyan-700">{imc}</span>
               </div>
             )}
           </div>
@@ -195,19 +195,19 @@ export default function PatientDetails() {
               }
             />
             <div className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+              <div className="flex flex-col gap-3">
+                <label className="text-sm font-black text-gray-500 uppercase tracking-widest">
                   Antécédents Personnels
                 </label>
-                <div className="bg-gray-50 rounded-xl px-4 py-3 text-sm text-gray-700 min-h-16">
+                <div className="bg-gray-50 border border-gray-100 rounded-xl px-5 py-4 text-lg font-bold text-gray-800 min-h-20 shadow-inner">
                   {patient.antecedentsPerso}
                 </div>
               </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+              <div className="flex flex-col gap-3">
+                <label className="text-sm font-black text-gray-500 uppercase tracking-widest">
                   Antécédents Familiaux
                 </label>
-                <div className="bg-gray-50 rounded-xl px-4 py-3 text-sm text-gray-700 min-h-16">
+                <div className="bg-gray-50 border border-gray-100 rounded-xl px-5 py-4 text-lg font-bold text-gray-800 min-h-20 shadow-inner">
                   {patient.antecedentsFamiliaux}
                 </div>
               </div>
@@ -284,7 +284,7 @@ export default function PatientDetails() {
             <p className="text-xs text-gray-400 mb-3">
               Ces notes sont visibles uniquement par le personnel médical autorisé.
             </p>
-            <div className="bg-gray-50 rounded-xl px-4 py-3 text-sm text-gray-700 leading-relaxed">
+            <div className="bg-gray-50 border border-gray-100 rounded-xl px-5 py-4 text-lg font-bold text-gray-800 leading-relaxed shadow-inner">
               {patient.noteClinique}
             </div>
           </div>

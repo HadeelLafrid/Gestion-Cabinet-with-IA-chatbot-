@@ -138,20 +138,20 @@ export default function ConsultationReport() {
               </svg>
               Retour
             </button>
-            <h1 className="text-2xl font-bold text-gray-800">
+            <h1 className="text-4xl font-black text-gray-900">
               Rapport de Consultation{' '}
-              <span className="text-indigo-500">#{report.id}</span>
+              <span className="text-indigo-600">#{report.id}</span>
             </h1>
-            <p className="text-sm text-gray-400 mt-1">
+            <p className="text-lg font-bold text-gray-600 mt-2">
               Généré par l'IA le {report.generatedAt}
             </p>
           </div>
           <div className="flex items-center gap-3">
             <button
               onClick={handleDownload}
-              className="flex items-center gap-2 border border-indigo-200 text-indigo-600 hover:bg-indigo-50 text-sm font-medium px-5 py-2.5 rounded-full transition-colors"
+              className="flex items-center gap-2 border-2 border-indigo-200 text-indigo-700 hover:bg-indigo-50 text-base font-bold px-7 py-3.5 rounded-full transition-all shadow-sm"
             >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
                 <polyline points="7 10 12 15 17 10" />
                 <line x1="12" y1="15" x2="12" y2="3" />
@@ -160,9 +160,9 @@ export default function ConsultationReport() {
             </button>
             <button
               onClick={handlePrint}
-              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-5 py-2.5 rounded-full transition-colors"
+              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-base font-black px-7 py-3.5 rounded-full transition-all shadow-lg active:scale-95"
             >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <polyline points="6 9 6 2 18 2 18 9" />
                 <path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2" />
                 <rect x="6" y="14" width="12" height="8" />
@@ -203,7 +203,7 @@ export default function ConsultationReport() {
                 </svg>
                 Informations Patient
               </h3>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-3 gap-6">
                 {[
                   { label: 'Nom complet', value: report.patient.name    },
                   { label: 'ID Patient',  value: report.patient.id      },
@@ -212,9 +212,9 @@ export default function ConsultationReport() {
                   { label: 'Téléphone',   value: report.patient.telephone },
                   { label: 'Adresse',     value: report.patient.adresse },
                 ].map(f => (
-                  <div key={f.label} className="bg-gray-50 rounded-xl px-4 py-3">
-                    <p className="text-xs text-gray-400 mb-1">{f.label}</p>
-                    <p className="text-sm font-semibold text-gray-700">{f.value}</p>
+                  <div key={f.label} className="bg-gray-50 border border-gray-100 rounded-xl px-5 py-4 shadow-sm">
+                    <p className="text-sm font-black text-gray-500 uppercase tracking-widest mb-2">{f.label}</p>
+                    <p className="text-lg font-black text-gray-800">{f.value}</p>
                   </div>
                 ))}
               </div>
@@ -225,18 +225,18 @@ export default function ConsultationReport() {
             {/* Motif + Observations */}
             <div className="grid grid-cols-2 gap-6">
               <div>
-                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
+                <h3 className="text-sm font-black text-gray-600 uppercase tracking-widest mb-4">
                   Motif de consultation
                 </h3>
-                <div className="bg-gray-50 rounded-xl px-4 py-3 text-sm text-gray-700 leading-relaxed">
+                <div className="bg-gray-50 border border-gray-100 rounded-xl px-6 py-5 text-lg font-bold text-gray-800 leading-relaxed shadow-inner">
                   {report.motif}
                 </div>
               </div>
               <div>
-                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
+                <h3 className="text-sm font-black text-gray-600 uppercase tracking-widest mb-4">
                   Observations cliniques
                 </h3>
-                <div className="bg-gray-50 rounded-xl px-4 py-3 text-sm text-gray-700 leading-relaxed">
+                <div className="bg-gray-50 border border-gray-100 rounded-xl px-6 py-5 text-lg font-bold text-gray-800 leading-relaxed shadow-inner">
                   {report.observations}
                 </div>
               </div>
@@ -249,10 +249,10 @@ export default function ConsultationReport() {
               <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
                 Diagnostics
               </h3>
-              <div className="flex items-center gap-2 flex-wrap mb-3">
+              <div className="flex items-center gap-3 flex-wrap mb-4">
                 {report.diagnostics.map(d => (
-                  <span key={d.code} className="flex items-center gap-2 bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-semibold px-4 py-2 rounded-full">
-                    <span className="text-indigo-400">{d.code}</span>
+                  <span key={d.code} className="flex items-center gap-3 bg-indigo-50 border-2 border-indigo-100 text-indigo-800 text-lg font-black px-6 py-3 rounded-full shadow-sm">
+                    <span className="text-indigo-400 font-mono text-sm">{d.code}</span>
                     {d.label}
                   </span>
                 ))}

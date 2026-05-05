@@ -26,8 +26,8 @@ export default function Sidebar() {
 
       {/* Logo */}
       <div className="mb-10 px-2">
-        <h1 className="text-xl font-bold text-indigo-700 tracking-tight">Med-IA</h1>
-        <p className="text-xs text-gray-400 mt-0.5">Gestion Cabinaire</p>
+        <h1 className="text-2xl font-black text-indigo-700 tracking-tight">Med-IA</h1>
+        <p className="text-sm font-bold text-gray-500 mt-1">Gestion Cabinaire</p>
       </div>
 
       {/* Nav */}
@@ -58,10 +58,10 @@ export default function Sidebar() {
         <div>
           <button
             onClick={() => setPatientOpen(!patientOpen)}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all
+            className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-base transition-all
               ${patientOpen
-                ? 'text-indigo-700 font-semibold bg-indigo-50'
-                : 'text-gray-500 hover:text-indigo-600 hover:bg-gray-50'
+                ? 'text-indigo-700 font-bold bg-indigo-50 shadow-sm'
+                : 'text-gray-600 font-semibold hover:text-indigo-600 hover:bg-gray-50'
               }`}
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -78,10 +78,10 @@ export default function Sidebar() {
               <NavLink
                 to={ROUTES.ADD_PATIENT}
                 className={({ isActive }) =>
-                  `flex items-center gap-2 px-2 py-2 rounded-lg text-xs transition-all
+                  `flex items-center gap-2 px-2 py-2.5 rounded-lg text-sm transition-all
                   ${isActive
-                    ? 'text-indigo-700 font-semibold bg-indigo-50'
-                    : 'text-gray-400 hover:text-indigo-600 hover:bg-gray-50'
+                    ? 'text-indigo-700 font-bold bg-indigo-100 shadow-sm'
+                    : 'text-gray-500 font-semibold hover:text-indigo-600 hover:bg-gray-50'
                   }`
                 }
               >
@@ -96,10 +96,10 @@ export default function Sidebar() {
               <NavLink
                 to={ROUTES.PATIENTS}
                 className={({ isActive }) =>
-                  `flex items-center gap-2 px-2 py-2 rounded-lg text-xs transition-all
+                  `flex items-center gap-2 px-2 py-2.5 rounded-lg text-sm transition-all
                   ${isActive
-                    ? 'text-indigo-700 font-semibold bg-indigo-50'
-                    : 'text-gray-400 hover:text-indigo-600 hover:bg-gray-50'
+                    ? 'text-indigo-700 font-bold bg-indigo-100 shadow-sm'
+                    : 'text-gray-500 font-semibold hover:text-indigo-600 hover:bg-gray-50'
                   }`
                 }
               >
@@ -117,10 +117,10 @@ export default function Sidebar() {
         <div>
           <button
             onClick={() => setConsultOpen(!consultOpen)}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all
+            className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-base transition-all
               ${consultOpen
-                ? 'text-indigo-700 font-semibold bg-indigo-50'
-                : 'text-gray-500 hover:text-indigo-600 hover:bg-gray-50'
+                ? 'text-indigo-700 font-bold bg-indigo-50 shadow-sm'
+                : 'text-gray-600 font-semibold hover:text-indigo-600 hover:bg-gray-50'
               }`}
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -136,10 +136,10 @@ export default function Sidebar() {
               <NavLink
                 to={ROUTES.CONSULTATION.replace('/:patientId', '')}
                 className={({ isActive }) =>
-                  `flex items-center gap-2 px-2 py-2 rounded-lg text-xs transition-all
+                  `flex items-center gap-2 px-2 py-2.5 rounded-lg text-sm transition-all
                   ${isActive
-                    ? 'text-indigo-700 font-semibold bg-indigo-50'
-                    : 'text-gray-400 hover:text-indigo-600 hover:bg-gray-50'
+                    ? 'text-indigo-700 font-bold bg-indigo-100 shadow-sm'
+                    : 'text-gray-500 font-semibold hover:text-indigo-600 hover:bg-gray-50'
                   }`
                 }
               >
@@ -153,10 +153,10 @@ export default function Sidebar() {
               <NavLink
                 to="/consultations/archive"
                 className={({ isActive }) =>
-                  `flex items-center gap-2 px-2 py-2 rounded-lg text-xs transition-all
+                  `flex items-center gap-2 px-2 py-2.5 rounded-lg text-sm transition-all
                   ${isActive
-                    ? 'text-indigo-700 font-semibold bg-indigo-50'
-                    : 'text-gray-400 hover:text-indigo-600 hover:bg-gray-50'
+                    ? 'text-indigo-700 font-bold bg-indigo-100 shadow-sm'
+                    : 'text-gray-500 font-semibold hover:text-indigo-600 hover:bg-gray-50'
                   }`
                 }
               >
@@ -234,12 +234,12 @@ export default function Sidebar() {
       <div className="px-2 pb-2">
         <button
           onClick={() => navigate(ROUTES.CONSULTATION.replace('/:patientId', ''))}
-          className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-sm font-semibold py-3 px-4 rounded-full transition-all"
+          className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-base font-black py-4 px-4 rounded-full transition-all shadow-md"
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
             <path d="M12 5v14M5 12h14" />
           </svg>
-          New Consultation
+          Nouvelle Consultation
         </button>
       </div>
 

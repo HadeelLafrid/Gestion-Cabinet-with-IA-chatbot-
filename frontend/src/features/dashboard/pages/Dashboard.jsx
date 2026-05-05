@@ -22,10 +22,10 @@ export default function Dashboard() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-800">
+        <h1 className="text-3xl font-black text-gray-900">
           Bonjour, {user?.first_name ? `Dr. ${user.first_name}` : 'Dr. Hadil'}
         </h1>
-        <p className="text-sm text-gray-400 mt-1">
+        <p className="text-lg font-bold text-gray-600 mt-2">
           Voici le résumé de votre activité pour aujourd'hui.
         </p>
       </div>
