@@ -31,7 +31,7 @@ export default function PatientDetails() {
   const [patient, setPatient] = useState(null)
 
   useEffect(() => {
-    fetch(`http://localhost:8001/api/v1/patients/${id}`)
+    fetch(`http://localhost:8000/api/v1/patients/${id}`)
       .then(res => res.json())
       .then(data => setPatient(data))
   }, [id])
