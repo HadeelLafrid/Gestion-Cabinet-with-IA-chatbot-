@@ -52,7 +52,7 @@ export default function Header() {
           <input
             type="text"
             placeholder="Rechercher un patient ou un acte..."
-            className="flex-1 text-sm text-gray-600 placeholder-gray-400 outline-none bg-transparent"
+            className="flex-1 text-base font-bold text-gray-900 placeholder-gray-500 outline-none bg-transparent"
           />
         </div>
       </div>

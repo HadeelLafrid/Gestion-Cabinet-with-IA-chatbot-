@@ -43,13 +43,22 @@ def get_all_patients(
     statement = select(Patient)
 
     if search:
-        q = f"%{search}%"
-        statement = statement.where(
-            or_(
-                Patient.first_name.ilike(q),
-                Patient.last_name.ilike(q),
+        search_term = search.strip()
+        if search_term.upper().startswith("PT-"):
+            search_term = search_term[3:]
+        
+        if search_term.isdigit():
+            statement = statement.where(Patient.id == int(search_term))
+        else:
+            q = f"%{search_term}%"
+            statement = statement.where(
+                or_(
+                    Patient.first_name.ilike(q),
+                    Patient.last_name.ilike(q),
+                    (Patient.first_name + " " + Patient.last_name).ilike(q),
+                    (Patient.last_name + " " + Patient.first_name).ilike(q)
+                )
             )
-        )
 
     total = len(session.exec(statement).all())
     statement = statement.offset((page - 1) * limit).limit(limit)

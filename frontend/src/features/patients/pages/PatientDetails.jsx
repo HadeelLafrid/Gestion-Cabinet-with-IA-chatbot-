@@ -8,7 +8,7 @@ function SectionHeader({ icon, title, color = 'bg-indigo-50 text-indigo-500' }) 
       <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${color}`}>
         {icon}
       </div>
-      <h2 className="text-lg font-bold text-gray-800">{title}</h2>
+      <h2 className="text-2xl font-black text-gray-900">{title}</h2>
     </div>
   )
 }
@@ -48,7 +48,7 @@ export default function PatientDetails() {
       {/* Page header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">
+          <h1 className="text-3xl font-black text-gray-900">
             Dossier Patient :{' '}
             <span className="text-indigo-500">{patient.first_name} {patient.last_name}</span>
           </h1>
@@ -59,7 +59,7 @@ export default function PatientDetails() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate(ROUTES.PATIENTS)}
-            className="px-6 py-2.5 rounded-full border border-gray-200 bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm font-medium transition-colors"
+            className="px-8 py-3.5 rounded-full border-2 border-gray-200 bg-gray-100 hover:bg-gray-200 text-gray-700 text-base font-bold transition-all shadow-sm"
           >
             Retour
           </button>
@@ -109,9 +109,9 @@ export default function PatientDetails() {
               <FieldBox label="Taille" value={patient.height} unit="cm"  />
             </div>
             {imc && (
-              <div className="mt-4 bg-cyan-50 border border-cyan-100 rounded-xl px-4 py-3 flex items-center justify-between">
-                <span className="text-xs font-bold text-cyan-600 uppercase tracking-widest">IMC Calculé</span>
-                <span className="text-lg font-bold text-cyan-700">{imc}</span>
+              <div className="mt-5 bg-cyan-50 border-2 border-cyan-100 rounded-2xl px-6 py-5 flex items-center justify-between shadow-sm">
+                <span className="text-sm font-black text-cyan-600 uppercase tracking-widest">IMC Calculé</span>
+                <span className="text-3xl font-black text-cyan-700">{imc}</span>
               </div>
             )}
           </div>
@@ -130,16 +130,16 @@ export default function PatientDetails() {
               }
             />
             <div className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+              <div className="flex flex-col gap-3">
+                <label className="text-sm font-black text-gray-500 uppercase tracking-widest">
                   Antécédents Personnels
                 </label>
                 <div className="bg-gray-50 rounded-xl px-4 py-3 text-sm text-gray-700 min-h-16">
                   {patient.personal_history ?? '—'}
                 </div>
               </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+              <div className="flex flex-col gap-3">
+                <label className="text-sm font-black text-gray-500 uppercase tracking-widest">
                   Antécédents Familiaux
                 </label>
                 <div className="bg-gray-50 rounded-xl px-4 py-3 text-sm text-gray-700 min-h-16">

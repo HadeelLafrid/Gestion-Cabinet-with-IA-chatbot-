@@ -38,8 +38,8 @@ export default function Login() {
       <p className="absolute top-6 right-8 text-sm text-gray-500">Portail Clinique</p>
 
       <div className="bg-white rounded-2xl shadow-sm w-full max-w-md px-10 py-12">
-        <h1 className="text-4xl font-bold text-gray-800 mb-2">Connexion</h1>
-        <p className="text-gray-500 text-sm mb-8">Bienvenue au Portail Clinique.</p>
+        <h1 className="text-4xl font-black text-gray-900 mb-2">Connexion</h1>
+        <p className="text-gray-600 text-lg font-bold mb-8">Bienvenue au Portail Clinique.</p>
 
         {error && (
           <div className="bg-red-50 text-red-600 text-sm px-4 py-2 rounded-lg mb-6">
@@ -51,7 +51,7 @@ export default function Login() {
 
           {/* Username — changed from email */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-gray-500 tracking-widest uppercase">
+            <label className="text-sm font-black text-gray-600 tracking-widest uppercase">
               Nom d'utilisateur
             </label>
             <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
@@ -65,14 +65,14 @@ export default function Login() {
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="dr.benali"
                 required
-                className="flex-1 bg-transparent text-sm text-gray-600 placeholder-gray-300 outline-none"
+                className="flex-1 bg-transparent text-lg font-bold text-gray-900 placeholder-gray-400 outline-none"
               />
             </div>
           </div>
 
           {/* Password — unchanged */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-gray-500 tracking-widest uppercase">
+            <label className="text-sm font-black text-gray-600 tracking-widest uppercase">
               Mot de passe
             </label>
             <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
@@ -86,7 +86,7 @@ export default function Login() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
-                className="flex-1 bg-transparent text-sm text-gray-600 placeholder-gray-300 outline-none"
+                className="flex-1 bg-transparent text-lg font-bold text-gray-900 placeholder-gray-400 outline-none"
               />
               <button
                 type="button"
@@ -130,7 +130,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-4 rounded-full transition-colors flex items-center justify-center gap-2 mt-2 disabled:opacity-60"
+            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xl py-5 rounded-full transition-all shadow-lg flex items-center justify-center gap-3 mt-4 disabled:opacity-60 active:scale-95"
           >
             {loading ? 'Connexion...' : (
               <>
