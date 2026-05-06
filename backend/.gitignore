@@ -5,3 +5,4 @@ venv/
 .venv/
 alembic.ini
 server.py
+backups/
