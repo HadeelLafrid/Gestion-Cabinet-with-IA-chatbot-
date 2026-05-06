@@ -10,6 +10,7 @@ const specializations = [
 ]
 
 const languages = ['Français', 'Anglais', 'Arabe', 'Espagnol', 'Allemand']
+
 export default function Profile() {
   const navigate = useNavigate()
   const [photo, setPhoto] = useState(null)
@@ -386,7 +387,7 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Action buttons */}
+        {/* Action Buttons */}
         <div className="flex items-center justify-center gap-4 mt-8">
 
           <button

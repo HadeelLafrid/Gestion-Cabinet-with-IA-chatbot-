@@ -15,6 +15,7 @@ import ContactPage from '../features/Contact/pages/ContactPage'
 import PaymentsPage from '../features/payments/pages/PaymentsPage'
 import AppointmentsPage from '../features/appointments/pages/AppointmentsPage'
 import Profile from '../features/profile/pages/Profile'
+import Parameters from '../features/profile/pages/Parameters'
 import { ROUTES } from '../constants/routes'
 
 const Placeholder = ({ name }) => (
@@ -45,8 +46,7 @@ export default function App() {
        <Route path={ROUTES.PAYMENTS} element={<PaymentsPage />} />
         <Route path={ROUTES.APPOINTMENTS} element={<AppointmentsPage />} />
         <Route path={ROUTES.PAYMENTS} element={<Placeholder name="Recette" />} />
-      <Route path={ROUTES.PROFILE} element={<Profile />} />
-      <Route path="/consultation"            element={<ConsultationSearch />} />
+      <Route path={ROUTES.PROFILE} element={<Profile />} />      <Route path={ROUTES.PARAMETERS} element={<Parameters />} />      <Route path="/consultation"            element={<ConsultationSearch />} />
       <Route path="/consultation/rapport/:id" element={<ConsultationReport />} />
 <Route path="/consultation/:patientId" element={<NewConsultation />}    />
 
