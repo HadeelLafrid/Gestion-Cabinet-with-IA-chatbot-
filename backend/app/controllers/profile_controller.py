@@ -15,3 +15,10 @@ def handle_update_profile(session: Session, data: dict):
     if not profile:
         raise HTTPException(status_code=404, detail="Profil introuvable")
     return profile
+
+
+def handle_backup_database():
+    try:
+        return profile_service.create_database_backup()
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc

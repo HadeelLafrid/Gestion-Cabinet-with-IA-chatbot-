@@ -13,6 +13,7 @@ import ConsultationReport from '../features/consultation/pages/ConsultationRepor
 import AddPatient from '../features/patients/pages/AddPatient'
 import ContactPage from '../features/Contact/pages/ContactPage'
 import PaymentsPage from '../features/payments/pages/PaymentsPage'
+import AppointmentsPage from '../features/appointments/pages/AppointmentsPage'
 import Profile from '../features/profile/pages/Profile'
 import { ROUTES } from '../constants/routes'
 
@@ -42,7 +43,7 @@ export default function App() {
        <Route path={ROUTES.CONTACT} element={<ContactPage />} />
        <Route path="/consultations/archive" element={<ArchivePage />} />
        <Route path={ROUTES.PAYMENTS} element={<PaymentsPage />} />
-        <Route path={ROUTES.APPOINTMENTS} element={<Placeholder name="Rendez-vous" />} />
+        <Route path={ROUTES.APPOINTMENTS} element={<AppointmentsPage />} />
         <Route path={ROUTES.PAYMENTS} element={<Placeholder name="Recette" />} />
       <Route path={ROUTES.PROFILE} element={<Profile />} />
       <Route path="/consultation"            element={<ConsultationSearch />} />

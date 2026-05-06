@@ -23,6 +23,7 @@ export default function PatientList() {
   const [query, setQuery] = useState('')
   const [patients, setPatients] = useState([])
   const [deleteTarget, setDeleteTarget] = useState(null)
+  const [deleteInProgress, setDeleteInProgress] = useState(false)
 
   const hasSearched = query.trim().length > 0
 
@@ -37,9 +38,56 @@ export default function PatientList() {
       .then(data => setPatients(data.data ?? []))
   }, [query])
 
-  const confirmDelete = () => {
-    setPatients((prev) => prev.filter((p) => p.id !== deleteTarget.id))
-    setDeleteTarget(null)
+  const confirmDelete = async () => {
+    if (!deleteTarget) return
+    setDeleteInProgress(true)
+    try {
+      const res = await fetch(`http://localhost:8000/api/v1/patients/${deleteTarget.id}`, {
+        method: 'DELETE',
+      })
+      if (res.ok) {
+        setPatients((prev) => prev.filter((p) => p.id !== deleteTarget.id))
+        setDeleteTarget(null)
+      } else {
+        let msg = 'Impossible de supprimer le patient.'
+        let shouldOfferForceDelete = false
+        try {
+          const payload = await res.json()
+          msg = payload.detail || payload.message || msg
+          shouldOfferForceDelete = typeof msg === 'string' && msg.includes('enregistrements liés')
+        } catch (e) {
+          // ignore JSON parse errors
+        }
+        if (shouldOfferForceDelete) {
+          const confirmed = window.confirm(`${msg}\n\nSupprimer aussi ses rendez-vous/consultations liés ?`)
+          if (confirmed) {
+            const forceRes = await fetch(`http://localhost:8000/api/v1/patients/${deleteTarget.id}?force=true`, {
+              method: 'DELETE',
+            })
+            if (forceRes.ok) {
+              setPatients((prev) => prev.filter((p) => p.id !== deleteTarget.id))
+              setDeleteTarget(null)
+              return
+            }
+            let forceMsg = 'Suppression forcée impossible.'
+            try {
+              const forcePayload = await forceRes.json()
+              forceMsg = forcePayload.detail || forcePayload.message || forceMsg
+            } catch (e) {
+              // ignore JSON parse errors
+            }
+            alert(forceMsg)
+            return
+          }
+        }
+        alert(msg)
+      }
+    } catch (error) {
+      console.error('Error deleting patient', error)
+      alert('Erreur réseau lors de la suppression du patient.')
+    } finally {
+      setDeleteInProgress(false)
+    }
   }
 
   return (
@@ -235,15 +283,17 @@ export default function PatientList() {
               <div className="flex gap-3 w-full mt-2">
                 <button
                   onClick={() => setDeleteTarget(null)}
-                  className="flex-1 py-3 rounded-full border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-50 transition-colors"
+                  disabled={deleteInProgress}
+                  className="flex-1 py-3 rounded-full border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-50 transition-colors disabled:opacity-60"
                 >
                   Annuler
                 </button>
                 <button
                   onClick={confirmDelete}
-                  className="flex-1 py-3 rounded-full bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition-colors"
+                  disabled={deleteInProgress}
+                  className="flex-1 py-3 rounded-full bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition-colors disabled:opacity-60"
                 >
-                  Supprimer
+                  {deleteInProgress ? 'Suppression...' : 'Supprimer'}
                 </button>
               </div>
             </div>

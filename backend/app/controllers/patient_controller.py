@@ -32,7 +32,21 @@ def handle_update_patient(session: Session, patient_id: int, data: PatientUpdate
     return patient_service.get_patient_detail(session, patient_id)
 
 
-def handle_delete_patient(session: Session, patient_id: int):
+def handle_delete_patient(session: Session, patient_id: int, force: bool = False):
+    # Ensure patient exists
+    existing = patient_service.get_patient(session, patient_id)
+    if not existing:
+        raise HTTPException(status_code=404, detail="Patient non trouvé")
+
+    if force:
+        deleted = patient_service.force_delete_patient_with_related(session, patient_id)
+        if not deleted:
+            raise HTTPException(status_code=404, detail="Patient non trouvé")
+        return
+
     deleted = patient_service.delete_patient(session, patient_id)
     if not deleted:
-        raise HTTPException(status_code=404, detail="Patient non trouvé")
+        raise HTTPException(
+            status_code=400,
+            detail="Impossible de supprimer le patient : il existe des enregistrements liés (rendez-vous ou consultations). Supprimez-les d'abord."
+        )

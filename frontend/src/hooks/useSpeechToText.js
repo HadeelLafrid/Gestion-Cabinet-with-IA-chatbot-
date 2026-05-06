@@ -6,6 +6,7 @@ export const useSpeechToText = (options = {}) => {
   const [error, setError] = useState(null);
   
   const recognitionRef = useRef(null);
+  const finalTranscriptRef = useRef('');
 
   const startListening = useCallback(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -15,14 +16,19 @@ export const useSpeechToText = (options = {}) => {
       return;
     }
 
+    // Reset transcript on start
+    finalTranscriptRef.current = '';
+    setTranscript('');
+
     recognitionRef.current = new SpeechRecognition();
-    recognitionRef.current.continuous = options.continuous || false;
-    recognitionRef.current.interimResults = options.interimResults || true;
+    recognitionRef.current.continuous = true; // Keep listening through pauses
+    recognitionRef.current.interimResults = true; // Show interim results
     recognitionRef.current.lang = options.lang || 'fr-FR';
 
     recognitionRef.current.onstart = () => {
       setIsListening(true);
       setError(null);
+      finalTranscriptRef.current = '';
     };
 
     recognitionRef.current.onerror = (event) => {
@@ -35,13 +41,26 @@ export const useSpeechToText = (options = {}) => {
     };
 
     recognitionRef.current.onresult = (event) => {
-      let currentTranscript = '';
+      // Build interim and final transcripts
+      let interimTranscript = '';
+      
       for (let i = event.resultIndex; i < event.results.length; i++) {
-        currentTranscript += event.results[i][0].transcript;
+        const transcript = event.results[i][0].transcript;
+        
+        if (event.results[i].isFinal) {
+          finalTranscriptRef.current += transcript + ' ';
+        } else {
+          interimTranscript += transcript;
+        }
       }
-      setTranscript(currentTranscript);
-      if (options.onResult) {
-        options.onResult(currentTranscript);
+
+      // Update visible transcript with both final and interim
+      const displayTranscript = finalTranscriptRef.current + interimTranscript;
+      setTranscript(displayTranscript);
+
+      // Call onResult only when there's new final content
+      if (options.onResult && finalTranscriptRef.current.trim()) {
+        options.onResult(finalTranscriptRef.current.trim());
       }
     };
 
@@ -52,8 +71,12 @@ export const useSpeechToText = (options = {}) => {
     if (recognitionRef.current) {
       recognitionRef.current.stop();
       setIsListening(false);
+      // Send final transcript on stop
+      if (options.onResult && finalTranscriptRef.current.trim()) {
+        options.onResult(finalTranscriptRef.current.trim());
+      }
     }
-  }, []);
+  }, [options]);
 
   return {
     isListening,

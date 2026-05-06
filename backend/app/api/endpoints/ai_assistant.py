@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from groq import Groq
-from sqlmodel import select
+from sqlmodel import select, delete
 from datetime import datetime
 
 from app.db.session import get_session
@@ -24,6 +24,41 @@ class AssistantMessageIn(BaseModel):
 
 class AssistantHistoryIn(BaseModel):
     messages: list[AssistantMessageIn]
+
+
+def _replace_patient_assistant_history(db, patient_id: int, messages: list[AssistantMessageIn]):
+    consultation_ids = db.exec(
+        select(Consultation.id)
+        .where(Consultation.patient_id == patient_id)
+        .order_by(Consultation.consultation_date.desc(), Consultation.id.desc())
+    ).all()
+
+    if not consultation_ids:
+        return 0
+
+    target_consultation_id = consultation_ids[0]
+
+    db.exec(
+        delete(ChatMessage).where(ChatMessage.consultation_id.in_(consultation_ids))
+    )
+
+    inserted = 0
+    for item in messages:
+        sender = item.sender.strip().lower()
+        if sender not in {"doctor", "ai"}:
+            continue
+        db.add(
+            ChatMessage(
+                consultation_id=target_consultation_id,
+                sender=sender,
+                message=item.message,
+                created_at=datetime.utcnow(),
+            )
+        )
+        inserted += 1
+
+    db.commit()
+    return inserted
 
 def build_patient_context(db, patient_id: Optional[int]) -> str:
     if not patient_id:
@@ -116,6 +151,49 @@ async def save_assistant_history(
     return {
         "message": "Assistant history saved successfully",
         "saved": len(saved_messages),
+    }
+
+
+@router.put("/history/{patient_id}")
+async def replace_assistant_history(
+    patient_id: int,
+    payload: AssistantHistoryIn,
+    db=Depends(get_session),
+):
+    patient = db.get(Patient, patient_id)
+    if not patient:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Patient not found")
+
+    saved = _replace_patient_assistant_history(db, patient_id, payload.messages)
+    return {
+        "message": "Assistant history updated successfully",
+        "saved": saved,
+    }
+
+
+@router.delete("/history/{patient_id}")
+async def delete_assistant_history(patient_id: int, db=Depends(get_session)):
+    patient = db.get(Patient, patient_id)
+    if not patient:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Patient not found")
+
+    consultation_ids = db.exec(
+        select(Consultation.id)
+        .where(Consultation.patient_id == patient_id)
+        .order_by(Consultation.consultation_date.desc(), Consultation.id.desc())
+    ).all()
+
+    deleted_count = 0
+    if consultation_ids:
+        result = db.exec(
+            delete(ChatMessage).where(ChatMessage.consultation_id.in_(consultation_ids))
+        )
+        db.commit()
+        deleted_count = getattr(result, "rowcount", None) or 0
+
+    return {
+        "message": "Assistant history deleted successfully",
+        "deleted": deleted_count,
     }
 
 

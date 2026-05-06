@@ -1,6 +1,13 @@
 from typing import Optional
 from sqlmodel import Session, select, or_
 from app.models.patient import Patient
+from app.models.appointment import Appointment
+from app.models.consultation import Consultation
+from app.models.ai_report import AIReport
+from app.models.chat_message import ChatMessage
+from app.models.consultation_exam import ConsultationExam
+from app.models.consultation_medicine import ConsultationMedicine
+from app.models.payment import Payment
 from app.schemas.patient_schema import PatientCreate, PatientUpdate
 from datetime import date
 
@@ -136,6 +143,79 @@ def delete_patient(session: Session, patient_id: int) -> bool:
     patient = session.get(Patient, patient_id)
     if not patient:
         return False
+    # Prevent deletion if related records exist
+    has_appointments = session.exec(select(Appointment).where(Appointment.patient_id == patient_id)).first() is not None
+    has_consultations = session.exec(select(Consultation).where(Consultation.patient_id == patient_id)).first() is not None
+    if has_appointments or has_consultations:
+        return False
+
+    session.delete(patient)
+    session.commit()
+    return True
+
+
+def force_delete_patient_with_related(session: Session, patient_id: int) -> bool:
+    patient = session.get(Patient, patient_id)
+    if not patient:
+        return False
+
+    consultations = session.exec(
+        select(Consultation).where(Consultation.patient_id == patient_id)
+    ).all()
+    consultation_ids = [c.id for c in consultations if c.id is not None]
+
+    appointments = session.exec(
+        select(Appointment).where(Appointment.patient_id == patient_id)
+    ).all()
+
+    ai_reports_by_patient = session.exec(
+        select(AIReport).where(AIReport.patient_id == patient_id)
+    ).all()
+
+    ai_reports_by_consultation = (
+        session.exec(select(AIReport).where(AIReport.consultation_id.in_(consultation_ids))).all()
+        if consultation_ids
+        else []
+    )
+    payments = (
+        session.exec(select(Payment).where(Payment.consultation_id.in_(consultation_ids))).all()
+        if consultation_ids
+        else []
+    )
+    chat_messages = (
+        session.exec(select(ChatMessage).where(ChatMessage.consultation_id.in_(consultation_ids))).all()
+        if consultation_ids
+        else []
+    )
+    consultation_exams = (
+        session.exec(select(ConsultationExam).where(ConsultationExam.consultation_id.in_(consultation_ids))).all()
+        if consultation_ids
+        else []
+    )
+    consultation_medicines = (
+        session.exec(select(ConsultationMedicine).where(ConsultationMedicine.consultation_id.in_(consultation_ids))).all()
+        if consultation_ids
+        else []
+    )
+
+    for row in appointments:
+        session.delete(row)
+    for row in ai_reports_by_patient:
+        session.delete(row)
+    for row in ai_reports_by_consultation:
+        if row not in ai_reports_by_patient:
+            session.delete(row)
+    for row in payments:
+        session.delete(row)
+    for row in chat_messages:
+        session.delete(row)
+    for row in consultation_exams:
+        session.delete(row)
+    for row in consultation_medicines:
+        session.delete(row)
+    for row in consultations:
+        session.delete(row)
+
     session.delete(patient)
     session.commit()
     return True

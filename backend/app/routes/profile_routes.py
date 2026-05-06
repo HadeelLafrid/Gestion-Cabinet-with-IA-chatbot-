@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends
+from fastapi.responses import FileResponse
 from sqlmodel import Session
 from typing import Optional
 from datetime import date
@@ -32,4 +33,14 @@ def get_profile(session: Session = Depends(get_session)):
 def update_profile(data: ProfileUpdate, session: Session = Depends(get_session)):
     return profile_controller.handle_update_profile(
         session, data=data.model_dump(exclude_unset=True)
+    )
+
+
+@router.get("/backup")
+def backup_database():
+    backup_path, backup_filename = profile_controller.handle_backup_database()
+    return FileResponse(
+        path=str(backup_path),
+        filename=backup_filename,
+        media_type="application/sql",
     )

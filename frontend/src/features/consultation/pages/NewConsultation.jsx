@@ -297,8 +297,9 @@ export default function NewConsultation() {
     }
   }, [chatConversation, draftHistoryKey]);
 
-  const [patientRecap, setPatientRecap] = useState(null);
-  const [isGeneratingRecap, setIsGeneratingRecap] = useState(false);
+  // Chat editing state
+  const [editingIndex, setEditingIndex] = useState(-1);
+  const [editingText, setEditingText] = useState("");
   const [isPredicting, setIsPredicting] = useState(false);
   const [isPredictingMedicines, setIsPredictingMedicines] = useState(false);
 
@@ -539,14 +540,97 @@ export default function NewConsultation() {
     }, 100);
   };
 
+  // Regenerate AI response for given user message
+  const regenerateAiResponse = async (userMessage, messageIndex) => {
+    try {
+      const pId = String(patient.id || patientId).replace(/\D/g, '');
+      const base = (apiClient.defaults && apiClient.defaults.baseURL) || '';
+      const urlBase = base.replace(/\/$/, '');
+      
+      // Include consultation context: motif and observations
+      const params = new URLSearchParams({
+        question: userMessage,
+        patient_id: pId,
+        motif: form.motif || '',
+        observations: form.observations || ''
+      });
+      
+      const url = `${urlBase}/api/ai/assistant/stream?${params.toString()}`;
+      let latestConversation = null;
+
+      // Remove old AI response if exists at messageIndex + 1
+      setChatConversation((prev) => {
+        const copy = [...prev];
+        if (messageIndex + 1 < copy.length && copy[messageIndex + 1].role === 'ai') {
+          copy.splice(messageIndex + 1, 1);
+        }
+        copy.splice(messageIndex + 1, 0, { role: 'ai', text: '' });
+        latestConversation = copy;
+        return copy;
+      });
+
+      return await new Promise((resolve) => {
+        const es = new EventSource(url);
+
+        es.onmessage = (e) => {
+          const chunk = e.data;
+          setChatConversation((prev) => {
+            if (prev.length <= messageIndex + 1) return prev;
+            const copy = [...prev];
+            copy[messageIndex + 1] = { ...copy[messageIndex + 1], text: (copy[messageIndex + 1].text || '') + chunk };
+            latestConversation = copy;
+            return copy;
+          });
+        };
+
+        es.addEventListener('done', () => {
+          es.close();
+          resolve(latestConversation || []);
+        });
+
+        es.addEventListener('error', () => {
+          es.close();
+          setChatConversation((prev) => {
+            if (prev.length <= messageIndex + 1) return prev;
+            const copy = [...prev];
+            if (!copy[messageIndex + 1].text) {
+              copy[messageIndex + 1].text = 'Désolé, une erreur est survenue lors de la régénération de la réponse.';
+            }
+            latestConversation = copy;
+            return copy;
+          });
+          resolve(latestConversation || []);
+        });
+      });
+    } catch (error) {
+      console.error('Error regenerating AI response:', error);
+      return [];
+    }
+  };
+
+  // Sync conversation to database
+  const syncHistoryToDb = async (messages) => {
+    try {
+      const pId = String(patient.id || patientId).replace(/\D/g, '');
+      if (pId) {
+        await apiClient.put(`/api/ai/assistant/history/${pId}`, {
+          messages: messages.map(m => ({ sender: m.role === 'user' ? 'doctor' : 'ai', message: m.text }))
+        });
+      }
+    } catch (err) {
+      console.error('Error syncing history to DB', err);
+    }
+  };
+
   // Send message to AI with full consultation context
   const sendAiMessage = async () => {
     if (!aiChat.trim()) return;
 
     const currentChat = aiChat;
+    setAiChat('');
+
     // add user message
     setChatConversation((prev) => [...prev, { role: 'user', text: currentChat }]);
-    setAiChat('');
 
     // add placeholder AI message to update progressively
     setChatConversation((prev) => [...prev, { role: 'ai', text: '' }]);
@@ -555,7 +639,16 @@ export default function NewConsultation() {
       const pId = String(patient.id || patientId).replace(/\D/g, '');
       const base = (apiClient.defaults && apiClient.defaults.baseURL) || '';
       const urlBase = base.replace(/\/$/, '');
-      const url = `${urlBase}/api/ai/assistant/stream?question=${encodeURIComponent(currentChat)}&patient_id=${encodeURIComponent(pId)}`;
+      
+      // Include consultation context: motif and observations
+      const params = new URLSearchParams({
+        question: currentChat,
+        patient_id: pId,
+        motif: form.motif || '',
+        observations: form.observations || ''
+      });
+      
+      const url = `${urlBase}/api/ai/assistant/stream?${params.toString()}`;
 
       const es = new EventSource(url);
 
@@ -606,24 +699,6 @@ export default function NewConsultation() {
     }
   };
 
-  const generatePatientRecap = async () => {
-    const pId = String(patient.id).replace(/\D/g, "");
-    if (!pId) {
-      alert("ID Patient invalide pour générer l'historique.");
-      return;
-    }
-
-    setIsGeneratingRecap(true);
-    try {
-      const response = await apiClient.get(`api/ai/resume/recap/${pId}`);
-      setPatientRecap(response.data.recap_text);
-    } catch (error) {
-      console.error("Erreur recap:", error);
-      alert("Impossible de générer le récapitulatif historique de ce patient.");
-    } finally {
-      setIsGeneratingRecap(false);
-    }
-  };
 
   const regenerateResumeWithChat = async () => {
     await generateResume();
@@ -1470,77 +1545,113 @@ export default function NewConsultation() {
             </div>
 
             <div className="p-5 flex flex-col gap-5">
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <p className="text-sm font-black text-gray-500 uppercase tracking-widest">
-                    Récapitulatif Historique
-                  </p>
-                </div>
-
-                {patientRecap ? (
-                  <div className="bg-indigo-50 border-2 border-indigo-100 rounded-xl p-5">
-                    <pre className="text-sm text-indigo-900 font-sans font-bold leading-relaxed whitespace-pre-wrap">
-                      {patientRecap}
-                    </pre>
-                  </div>
-                ) : (
-                  <div className="bg-gray-50 border border-gray-100 border-dashed rounded-xl p-5 flex flex-col items-center text-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-500">
-                      <svg
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-gray-700 mb-1">
-                        Historique patient
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        Générez un résumé des anciennes consultations de ce
-                        patient pour l'avoir sous les yeux.
-                      </p>
-                    </div>
-                    <button
-                      onClick={generatePatientRecap}
-                      disabled={isGeneratingRecap}
-                      className="mt-1 flex items-center justify-center gap-2 w-full py-2 bg-white border border-indigo-200 text-indigo-600 rounded-lg text-xs font-bold hover:bg-indigo-50 transition-colors"
-                    >
-                      {isGeneratingRecap
-                        ? "Analyse en cours..."
-                        : "Générer le récapitulatif"}
-                    </button>
-                  </div>
-                )}
-              </div>
 
               <div className="pt-4 border-t border-gray-100">
                 <div className="flex items-center justify-between mb-4">
                   <p className="text-sm font-black text-gray-500 uppercase tracking-widest">
                     Assistant Chat
                   </p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={async () => {
+                        if (!window.confirm("Supprimer tout l'historique de l'assistant pour ce patient ?")) return;
+                        try {
+                          const pId = String(patient.id).replace(/\D/g, "");
+                          if (!pId) return;
+                          await apiClient.delete(`/api/ai/assistant/history/${pId}`);
+                          setChatConversation([]);
+                          try { localStorage.removeItem(draftHistoryKey); } catch(e){}
+                          alert("Historique supprimé.");
+                        } catch (err) {
+                          console.error('Error deleting history', err);
+                          alert("Impossible de supprimer l'historique.");
+                        }
+                      }}
+                      className="text-xs bg-red-50 text-red-700 px-3 py-1 rounded-full border border-red-100 hover:bg-red-100 transition-colors"
+                    >
+                      Supprimer l'historique
+                    </button>
+                  </div>
                 </div>
 
                 {chatConversation.length > 0 && (
-                  <div className="flex flex-col gap-2 max-h-48 overflow-y-auto mb-3 p-3 bg-gray-50 rounded-xl">
+                  <div className="flex flex-col gap-2 max-h-[640px] overflow-y-auto mb-3 p-3 bg-gray-50 rounded-xl">
                     {chatConversation.map((m, i) => (
-                      <div
-                        key={i}
-                        className={`text-base font-medium px-4 py-3 rounded-2xl ${
-                          m.role === "user"
-                            ? "bg-indigo-100 text-indigo-800 self-end ml-6 shadow-sm"
-                            : "bg-white border-2 border-gray-100 text-gray-900 self-start mr-6 shadow-sm"
-                        }`}
-                      >
-                        <span className="font-black text-sm block mb-1 uppercase tracking-tight">
-                          {m.role === "user" ? "Médecin" : "Assistant IA"}
-                        </span>
-                        {m.text}
+                      <div key={i} className="relative group">
+                        {editingIndex === i ? (
+                          <div className="bg-indigo-100 text-indigo-800 self-end ml-6 shadow-sm px-4 py-3 rounded-2xl">
+                            <span className="font-black text-sm block mb-2 uppercase tracking-tight">Modifier votre message</span>
+                            <textarea
+                              value={editingText}
+                              onChange={(e) => setEditingText(e.target.value)}
+                              className="w-full bg-white border border-indigo-300 rounded-lg p-2 text-base font-medium resize-none outline-none focus:border-indigo-500"
+                              rows={3}
+                            />
+                            <div className="flex gap-2 mt-3">
+                              <button
+                                onClick={async () => {
+                                  const updated = chatConversation.map((msg, idx) => idx === i ? { ...msg, text: editingText } : msg);
+                                  setChatConversation(updated);
+                                  setEditingIndex(-1);
+                                  setEditingText("");
+                                  const regenerated = await regenerateAiResponse(editingText, i);
+                                  await syncHistoryToDb(regenerated.length ? regenerated : updated);
+                                }}
+                                className="px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold"
+                              >
+                                Enregistrer
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setEditingIndex(-1);
+                                  setEditingText("");
+                                }}
+                                className="px-4 py-1.5 rounded-lg border border-indigo-300 text-indigo-700 hover:bg-indigo-50 text-sm font-semibold"
+                              >
+                                Annuler
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className={`text-base font-medium px-4 py-3 rounded-2xl ${m.role === "user" ? "bg-indigo-100 text-indigo-800 self-end ml-6 shadow-sm" : "bg-white border-2 border-gray-100 text-gray-900 self-start mr-6 shadow-sm"}`}>
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1">
+                                <span className="font-black text-sm block mb-1 uppercase tracking-tight">
+                                  {m.role === "user" ? "Médecin" : "Assistant IA"}
+                                </span>
+                                {m.text}
+                              </div>
+                              {m.role === "user" && (
+                                <div className="flex gap-1.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <button
+                                    onClick={() => {
+                                      setEditingIndex(i);
+                                      setEditingText(m.text || "");
+                                    }}
+                                    className="text-indigo-600 hover:text-indigo-800 text-lg"
+                                    title="Modifier"
+                                  >
+                                    ✏️
+                                  </button>
+                                  <button
+                                    onClick={async () => {
+                                      if (!window.confirm('Supprimer ce message et sa réponse ?')) return;
+                                      const messagesBefore = chatConversation.slice(0, i);
+                                      const aiResponseAfter = chatConversation[i + 1]?.role === 'ai' ? 1 : 0;
+                                      const updated = [...messagesBefore, ...chatConversation.slice(i + 1 + aiResponseAfter)];
+                                      setChatConversation(updated);
+                                      await syncHistoryToDb(updated);
+                                    }}
+                                    className="text-red-600 hover:text-red-800 text-lg"
+                                    title="Supprimer"
+                                  >
+                                    🗑️
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -1554,6 +1665,10 @@ export default function NewConsultation() {
                     onKeyDown={(e) => e.key === "Enter" && sendAiMessage()}
                     placeholder="Posez une question..."
                     className="flex-1 bg-transparent text-base font-bold text-gray-900 placeholder-gray-400 outline-none"
+                  />
+                  <VoiceInputButton
+                    onResult={(text) => setAiChat((prev) => (prev ? `${prev} ${text}` : text))}
+                    className="ml-2"
                   />
                   <button
                     onClick={sendAiMessage}

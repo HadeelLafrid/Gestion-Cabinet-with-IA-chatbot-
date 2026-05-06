@@ -44,5 +44,9 @@ def update_patient(
 
 # DELETE /api/v1/patients/123
 @router.delete("/{patient_id}", status_code=204)
-def delete_patient(patient_id: int, session: Session = Depends(get_session)):
-    patient_controller.handle_delete_patient(session, patient_id)
+def delete_patient(
+    patient_id: int,
+    force: bool = Query(default=False),
+    session: Session = Depends(get_session),
+):
+    patient_controller.handle_delete_patient(session, patient_id, force=force)

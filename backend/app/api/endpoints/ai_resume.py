@@ -103,9 +103,24 @@ HONORAIRES: {data.montant} DA
 
 {history_context}
 
-Génère un résumé de consultation médical très soigné. Formate-le pour qu'il soit professionnel, comme un compte-rendu textuel consigné dans le dossier ou remis au médecin traitant.
-S'il existe un "HISTORIQUE DES CONSULTATIONS PRÉCÉDENTES", intègre-le de façon résumée dans une section "ANTÉCÉDENTS / SUIVI" afin de mettre en évidence l'évolution du patient.
-Utilise une belle mise en page en texte clair structuré (utilise des séparateurs simples pour structurer).
+Génère une synthèse clinique très soignée, utile au dossier médical et au médecin traitant.
+IMPORTANT:
+- Ne répète pas l'identité du patient ni ses informations démographiques dans le corps du résumé, car elles sont déjà affichées ailleurs.
+- Ne reformule pas les champs bruts mot à mot.
+- Concentre-toi sur le contenu clinique et la décision médicale.
+- Garde un ton professionnel, neutre et concis.
+
+Structure attendue du texte:
+1. Synthèse clinique: 2 à 4 phrases claires résumant le contexte.
+2. Évaluation: motif, observations, diagnostic(s), sévérité.
+3. Prise en charge: traitements, examens, recommandations, notes utiles.
+4. Antécédents / suivi: uniquement si l'historique précédent apporte une information pertinente.
+
+Formatage:
+- Utilise des titres courts en majuscules.
+- Sépare les sections par une ligne vide.
+- Si une information est absente, n'invente rien.
+- Rédige comme un document médical final propre et solide.
 
 INSTRUCTION CRITIQUE:
 Tu dois impérativement retourner un JSON valide avec la clé "resume_text" contenant le texte formaté (utilise "\\n" pour tes retours à la ligne).

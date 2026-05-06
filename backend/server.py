@@ -1,6 +1,7 @@
 # Standard route imports
 import app.routes.consultationRoute as consultationRoute
 import app.routes.authenticationRoute as authenticationRoute
+import app.routes.appointment_routes as appointmentRoute
 from app.routes.profile_routes import router as profile_router
 from app.routes.patient_routes import router as patient_router
 from app.routes.dashboardRoute import router as dashboardRoute
@@ -33,6 +34,7 @@ app.include_router(patient_router)
 app.include_router(profile_router)
 app.include_router(consultationRoute.router)
 app.include_router(authenticationRoute.router)
+app.include_router(appointmentRoute.router)
 app.include_router(dashboardRoute)
 
 @app.get("/")
