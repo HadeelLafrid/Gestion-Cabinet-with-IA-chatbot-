@@ -2,9 +2,8 @@
 
 @layer base {
   html {
-    /* Increase base font size so all 'rem' units scale up */
-    font-size: 100%; /* This makes 1rem = 18px (default is 16px) */
-    color: #111827; /* gray-900 for maximum contrast */
+    font-size: 100%;
+    color: #111827;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -16,38 +15,21 @@
     color: #111827;
   }
 
-  /* Make all common text elements bolder and darker by default */
-  p, span, div, label, li, td, th {
-    font-weight: 500; /* Medium weight for better legibility */
-    color: #1f2937; /* gray-800 */
-  }
-
-  h1, h2, h3, h4, h5, h6 {
-    color: #111827 !important; /* gray-900 */
-    font-weight: 800 !important; /* Extra Bold */
-    line-height: 1.2;
-  }
-
-  /* Increase contrast for small text specifically */
   .text-xs, .text-sm {
-    color: #374151; /* gray-700 */
-    font-weight: 600; /* Bolder for small text */
+    font-weight: 600;
   }
 
-  /* Global focus styles for accessibility */
   :focus-visible {
     outline: 3px solid #6366f1;
     outline-offset: 2px;
   }
 
-  /* Standard form elements should be larger */
   input, select, textarea, button {
-    font-size: 1rem !important; /* Forces at least 18px */
+    font-size: 1rem !important;
   }
 
-  /* Ensure placeholders are readable */
   ::placeholder {
-    color: #9ca3af !important; /* gray-400 instead of 300 */
+    color: #9ca3af !important;
     opacity: 1;
   }
 }

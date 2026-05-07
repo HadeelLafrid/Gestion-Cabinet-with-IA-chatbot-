@@ -1,414 +1,774 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import apiClient from '../../../services/apiClient'
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
-const emptyForm = {
-  appointment_date: '',
-  appointment_time: '',
-  reason: '',
-  notes: '',
+const DAYS_FR = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam']
+const MONTHS_FR = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
+const TYPE_OPTIONS = ['Consultation', 'Suivi', 'Première visite', 'Résultats labo', 'Urgence', 'Autre']
+const API_BASE = 'http://localhost:8000/api/v1/appointments'
+const PATIENTS_API_BASE = 'http://localhost:8000/api/v1/patients'
+
+function getInitials(name) {
+  return name.split(' ').map((part) => part[0]).join('').toUpperCase().slice(0, 2)
 }
 
-function patientLabel(patient) {
-  if (!patient) return ''
-  const name = `${patient.first_name || ''} ${patient.last_name || ''}`.trim() || `Patient #${patient.id}`
-  const extra = [patient.age ? `${patient.age} ans` : null, patient.phone || null].filter(Boolean)
-  return extra.length ? `${name} • ${extra.join(' • ')}` : name
+function getDaysInMonth(year, month) {
+  return new Date(year, month + 1, 0).getDate()
 }
 
-export default function AppointmentsPage() {
-  const [patients, setPatients] = useState([])
+function getFirstDayOfMonth(year, month) {
+  return new Date(year, month, 1).getDay()
+}
+
+function getTimeSortValue(value) {
+  return value || '99:99'
+}
+
+function formatTime(value) {
+  return value || 'Toute la journée'
+}
+
+export default function AppointmentList() {
+  const navigate = useNavigate()
+  const today = new Date()
+
   const [appointments, setAppointments] = useState([])
+  const [patientOptions, setPatientOptions] = useState([])
+  const [selectedDate, setSelectedDate] = useState(null)
+  const [calYear, setCalYear] = useState(today.getFullYear())
+  const [calMonth, setCalMonth] = useState(today.getMonth())
+  const [showForm, setShowForm] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [editTarget, setEditTarget] = useState(null)
+  const [viewMode, setViewMode] = useState('all')
   const [patientQuery, setPatientQuery] = useState('')
-  const [selectedPatient, setSelectedPatient] = useState(null)
-  const [form, setForm] = useState(emptyForm)
-  const [loadingPatients, setLoadingPatients] = useState(true)
-  const [loadingAppointments, setLoadingAppointments] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [deletingId, setDeletingId] = useState(null)
-  const [showSuggestions, setShowSuggestions] = useState(false)
-  const [creatingPatient, setCreatingPatient] = useState(false)
-  const searchWrapRef = useRef(null)
+  const [selectedPatientId, setSelectedPatientId] = useState('')
+  const [patientMenuOpen, setPatientMenuOpen] = useState(false)
+  const [form, setForm] = useState({ patient: '', phone: '', date: '', heure: '', type: 'Consultation' })
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (searchWrapRef.current && !searchWrapRef.current.contains(event.target)) {
-        setShowSuggestions(false)
+  const handleFormChange = (event) => setForm((current) => ({ ...current, [event.target.name]: event.target.value }))
+
+  const loadPatientOptions = async (search = '') => {
+    try {
+      const response = await fetch(`${PATIENTS_API_BASE}/?search=${encodeURIComponent(search)}&limit=20`)
+      if (!response.ok) throw new Error('Failed to fetch patients')
+      const data = await response.json()
+      setPatientOptions(data.data || [])
+    } catch (error) {
+      console.error(error)
+      setPatientOptions([])
+    }
+  }
+
+  const handlePatientQueryChange = (value) => {
+    setPatientQuery(value)
+    setSelectedPatientId('')
+    setForm((current) => ({ ...current, patient: value }))
+    setPatientMenuOpen(true)
+    if (value.trim().length >= 1) {
+      loadPatientOptions(value)
+    } else {
+      loadPatientOptions('')
+    }
+  }
+
+  const selectExistingPatient = (patient) => {
+    const fullName = `${patient.first_name || ''} ${patient.last_name || ''}`.trim()
+    setSelectedPatientId(String(patient.id))
+    setPatientQuery(fullName)
+    setForm((current) => ({ ...current, patient: fullName }))
+    setPatientMenuOpen(false)
+  }
+
+  const openAddForm = () => {
+    setForm({
+      patient: '',
+      phone: '',
+      date: selectedDate || today.toISOString().split('T')[0],
+      heure: '',
+      type: 'Consultation',
+    })
+    setPatientQuery('')
+    setSelectedPatientId('')
+    setPatientMenuOpen(false)
+    setEditTarget(null)
+    setShowForm(true)
+  }
+
+  const openEditForm = (appointment) => {
+    const fullName = appointment.patient || ''
+    setForm({
+      patient: fullName,
+      phone: appointment.phone,
+      date: appointment.date,
+      heure: appointment.heure || '',
+      type: appointment.type,
+    })
+    setPatientQuery(fullName)
+    setSelectedPatientId(appointment.patient_id ? String(appointment.patient_id) : '')
+    setPatientMenuOpen(false)
+    setEditTarget(appointment)
+    setShowForm(true)
+  }
+
+  const handleSave = async () => {
+    if (!form.patient.trim() || !form.date) return
+
+    try {
+      const payload = {
+        appointment_date: form.date,
+        appointment_time: form.heure,
+        reason: form.type,
       }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
 
-  const loadPatients = async () => {
-    setLoadingPatients(true)
-    try {
-      const response = await apiClient.get('/api/v1/patients', {
-        params: { limit: 100, page: 1 },
-      })
-      console.log('Patients loaded:', response.data)
-      setPatients(response.data?.data || [])
+      if (selectedPatientId) {
+        payload.patient_id = Number(selectedPatientId)
+      } else {
+        payload.patient_name = form.patient.trim()
+      }
+
+      if (editTarget) {
+        const response = await fetch(`${API_BASE}/${editTarget.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+        if (!response.ok) throw new Error('Update failed')
+        const updated = await response.json()
+        setAppointments((current) => current.map((appointment) => (
+          appointment.id === updated.id
+            ? {
+                ...appointment,
+                patient: updated.patient_name || form.patient,
+                patient_id: updated.patient_id || appointment.patient_id || null,
+                phone: appointment.phone || '',
+                date: updated.appointment_date,
+                heure: updated.appointment_time || '',
+                type: updated.reason || form.type,
+              }
+            : appointment
+        )))
+      } else {
+        const response = await fetch(`${API_BASE}/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+        if (!response.ok) throw new Error('Create failed')
+        const created = await response.json()
+        setAppointments((current) => [
+          ...current,
+          {
+            id: created.id,
+            patient: created.patient_name || form.patient,
+            patient_id: created.patient_id || (selectedPatientId ? Number(selectedPatientId) : null),
+            phone: form.phone || '',
+            date: created.appointment_date,
+            heure: created.appointment_time || '',
+            type: created.reason || form.type,
+            color: 'bg-indigo-100 text-indigo-700',
+          },
+        ])
+      }
+
+      setShowForm(false)
+      setEditTarget(null)
+      setPatientMenuOpen(false)
     } catch (error) {
-      console.error('Error loading patients', error)
-      setPatients([])
-    } finally {
-      setLoadingPatients(false)
+      console.error(error)
     }
   }
 
-  const loadAppointments = async () => {
-    setLoadingAppointments(true)
+  const confirmDelete = async () => {
+    if (!deleteTarget) return
+
     try {
-      const response = await apiClient.get('/api/v1/appointments')
-      setAppointments(response.data || [])
+      const response = await fetch(`${API_BASE}/${deleteTarget.id}`, { method: 'DELETE' })
+      if (!response.ok && response.status !== 204) throw new Error('Delete failed')
+      setAppointments((current) => current.filter((appointment) => appointment.id !== deleteTarget.id))
     } catch (error) {
-      console.error('Error loading appointments', error)
-      setAppointments([])
+      console.error(error)
     } finally {
-      setLoadingAppointments(false)
+      setDeleteTarget(null)
     }
   }
 
   useEffect(() => {
-    loadPatients()
-    loadAppointments()
+    let active = true
+
+    ;(async () => {
+      try {
+        const response = await fetch(`${API_BASE}/`)
+        if (!response.ok) throw new Error('Failed to fetch appointments')
+        const data = await response.json()
+        if (!active) return
+
+        setAppointments(
+          data.map((appointment) => ({
+            id: appointment.id,
+            patient: appointment.patient_name || '',
+            patient_id: appointment.patient_id || null,
+            phone: '',
+            date: appointment.appointment_date,
+            heure: appointment.appointment_time || '',
+            type: appointment.reason || '',
+            color: 'bg-indigo-100 text-indigo-700',
+          })),
+        )
+        loadPatientOptions('')
+      } catch (error) {
+        console.error(error)
+      }
+    })()
+
+    return () => {
+      active = false
+    }
   }, [])
 
-  const filteredPatients = useMemo(() => {
-    const q = patientQuery.trim().toLowerCase()
-    if (!q) return patients.slice(0, 8)
-    return patients.filter((patient) => {
-      const fullName = `${patient.first_name || ''} ${patient.last_name || ''}`.toLowerCase()
-      const idText = String(patient.id || '').toLowerCase()
-      const phone = String(patient.phone || '').toLowerCase()
-      return fullName.includes(q) || idText.includes(q) || phone.includes(q)
-    }).slice(0, 8)
-  }, [patients, patientQuery])
-
-  const upcomingCount = appointments.length
-  const confirmedCount = appointments.filter((appointment) => (appointment.status || 'confirmed') === 'confirmed').length
-  const todayIso = new Date().toISOString().slice(0, 10)
-  const todayCount = appointments.filter((appointment) => appointment.appointment_date === todayIso).length
-
-  const selectPatient = (patient) => {
-    setSelectedPatient(patient)
-    setPatientQuery(patientLabel(patient))
-    setShowSuggestions(false)
-    setCreatingPatient(false)
-  }
-
-  const typedPatientName = patientQuery.trim()
-
-  const exactPatientMatch = useMemo(() => {
-    if (!typedPatientName) return null
-    const normalizedQuery = typedPatientName.toLowerCase().replace(/\s+/g, ' ').trim()
-    return patients.find((patient) => {
-      const fullName = `${patient.first_name || ''} ${patient.last_name || ''}`.toLowerCase().replace(/\s+/g, ' ').trim()
-      return fullName === normalizedQuery
-    }) || null
-  }, [patients, typedPatientName])
-
-  const resolvedPatient = selectedPatient || exactPatientMatch
-
-  const isNewPatientFlow = !selectedPatient && typedPatientName.length > 0 && !exactPatientMatch
-
-  const createPayloadPatient = () => {
-    if (resolvedPatient) {
-      return { patient_id: resolvedPatient.id }
+  const daysInMonth = getDaysInMonth(calYear, calMonth)
+  const firstDay = getFirstDayOfMonth(calYear, calMonth)
+  const prevMonth = () => {
+    if (calMonth === 0) {
+      setCalYear((year) => year - 1)
+      setCalMonth(11)
+    } else {
+      setCalMonth((month) => month - 1)
     }
-
-    const patient_name = typedPatientName
-    return {
-      patient_name,
-      patient_note: form.notes || null,
+  }
+  const nextMonth = () => {
+    if (calMonth === 11) {
+      setCalYear((year) => year + 1)
+      setCalMonth(0)
+    } else {
+      setCalMonth((month) => month + 1)
     }
   }
 
-  const handleSubmit = async (event) => {
-    event.preventDefault()
-    if (!typedPatientName || !form.appointment_date) return
+  const apptsByDate = appointments.reduce((accumulator, appointment) => {
+    accumulator[appointment.date] = accumulator[appointment.date] || []
+    accumulator[appointment.date].push(appointment)
+    return accumulator
+  }, {})
 
-    setSaving(true)
-    try {
-      await apiClient.post('/api/v1/appointments', {
-        ...createPayloadPatient(),
-        appointment_date: form.appointment_date,
-        appointment_time: form.appointment_time?.trim() || null,
-        reason: form.reason || null,
-        notes: form.notes || null,
-      })
-      setForm(emptyForm)
-      setSelectedPatient(null)
-      setPatientQuery('')
-      await loadAppointments()
-    } catch (error) {
-      console.error('Error creating appointment', error)
-      const message = error.response?.data?.detail || "Impossible d'enregistrer le rendez-vous."
-      alert(message)
-    } finally {
-      setSaving(false)
-    }
-  }
+  const displayedAppointments = selectedDate && viewMode === 'day'
+    ? [...appointments].filter((appointment) => appointment.date === selectedDate).sort((a, b) => getTimeSortValue(a.heure).localeCompare(getTimeSortValue(b.heure)))
+    : [...appointments].sort((a, b) => a.date.localeCompare(b.date) || getTimeSortValue(a.heure).localeCompare(getTimeSortValue(b.heure)))
 
-  const deleteAppointment = async (appointmentId) => {
-    if (!window.confirm('Supprimer ce rendez-vous ?')) return
-    setDeletingId(appointmentId)
-    try {
-      await apiClient.delete(`/api/v1/appointments/${appointmentId}`)
-      await loadAppointments()
-    } catch (error) {
-      console.error('Error deleting appointment', error)
-      alert('Impossible de supprimer le rendez-vous.')
-    } finally {
-      setDeletingId(null)
-    }
-  }
-
-  const sortedAppointments = [...appointments].sort((left, right) => {
-    const leftKey = `${left.appointment_date}T${left.appointment_time || '23:59'}`
-    const rightKey = `${right.appointment_date}T${right.appointment_time || '23:59'}`
-    return leftKey.localeCompare(rightKey)
-  })
+  const todayStr = today.toISOString().split('T')[0]
+  const todayCount = appointments.filter((appointment) => appointment.date === todayStr).length
+  const weekCount = appointments.filter((appointment) => {
+    const date = new Date(appointment.date)
+    const startOfWeek = new Date(today)
+    startOfWeek.setDate(today.getDate() - today.getDay())
+    const endOfWeek = new Date(startOfWeek)
+    endOfWeek.setDate(startOfWeek.getDate() + 6)
+    return date >= startOfWeek && date <= endOfWeek
+  }).length
+  const totalCount = appointments.length
 
   return (
-    <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-[2rem] border border-indigo-100 bg-gradient-to-br from-indigo-700 via-indigo-600 to-slate-900 text-white shadow-[0_18px_60px_rgba(79,70,229,0.25)]">
-        <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_top_right,_white,_transparent_32%),radial-gradient(circle_at_bottom_left,_white,_transparent_28%)]" />
-        <div className="relative px-7 py-7 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-2xl space-y-3">
-            <p className="text-xs font-extrabold uppercase tracking-[0.35em] text-indigo-200">Rendez-vous</p>
-            <h1 className="text-4xl lg:text-5xl font-black leading-tight">Planifier vos rendez-vous avec une vue claire</h1>
-            <p className="text-indigo-100 text-base lg:text-lg max-w-xl">Recherchez un patient une seule fois, sélectionnez-le dans la liste, puis enregistrez le rendez-vous dans la base de données.</p>
-          </div>
-          <div className="grid grid-cols-3 gap-3 min-w-[280px]">
-            <div className="rounded-2xl bg-white/12 border border-white/15 px-4 py-3 backdrop-blur-sm">
-              <p className="text-xs uppercase tracking-widest text-indigo-200">Total</p>
-              <p className="text-3xl font-black mt-1">{upcomingCount}</p>
+    <div className="flex flex-col gap-6">
+      {showForm && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
+                    <rect x="3" y="4" width="18" height="18" rx="2" />
+                    <path d="M16 2v4M8 2v4M3 10h18" />
+                  </svg>
+                </div>
+                <h3 className="text-base font-bold text-gray-800">
+                  {editTarget ? 'Modifier le rendez-vous' : 'Nouveau rendez-vous'}
+                </h3>
+              </div>
+              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
             </div>
-            <div className="rounded-2xl bg-white/12 border border-white/15 px-4 py-3 backdrop-blur-sm">
-              <p className="text-xs uppercase tracking-widest text-indigo-200">Confirmés</p>
-              <p className="text-3xl font-black mt-1">{confirmedCount}</p>
+
+            <div className="px-6 py-5 flex flex-col gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">
+                    Nom du patient <span className="text-red-400">*</span>
+                </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      name="patient"
+                      value={patientQuery}
+                      onChange={(event) => handlePatientQueryChange(event.target.value)}
+                      onFocus={() => setPatientMenuOpen(true)}
+                      onBlur={() => setTimeout(() => setPatientMenuOpen(false), 150)}
+                      placeholder="Ex: Karim Amrani"
+                      list="patient-suggestions"
+                      className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-700 placeholder-gray-300 outline-none focus:border-indigo-400 transition-colors w-full"
+                    />
+                    {patientMenuOpen && patientOptions.length > 0 && (
+                      <div className="absolute z-20 mt-2 w-full rounded-xl border border-gray-200 bg-white shadow-lg max-h-56 overflow-auto">
+                        {patientOptions.map((patient) => {
+                          const fullName = `${patient.first_name || ''} ${patient.last_name || ''}`.trim()
+                          return (
+                            <button
+                              key={patient.id}
+                              type="button"
+                              onMouseDown={() => selectExistingPatient(patient)}
+                              className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors flex items-center justify-between gap-3"
+                            >
+                              <div>
+                                <p className="text-sm font-semibold text-gray-800">{fullName || `Patient #${patient.id}`}</p>
+                                <p className="text-xs text-gray-400">Patient existant</p>
+                              </div>
+                              <span className="text-xs font-bold text-indigo-600">Sélectionner</span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                  {patientQuery.trim() && !selectedPatientId && (
+                    <p className="text-xs text-amber-600">Ce nom sera créé comme nouveau patient si vous enregistrez.</p>
+                  )}
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">Téléphone</label>
+                <input
+                  type="tel"
+                  name="phone"
+                  value={form.phone}
+                  onChange={handleFormChange}
+                  placeholder="0550 12 34 56"
+                  className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-700 placeholder-gray-300 outline-none focus:border-indigo-400 transition-colors"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">
+                    Date <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    name="date"
+                    value={form.date}
+                    onChange={handleFormChange}
+                    className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-700 outline-none focus:border-indigo-400 transition-colors"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">
+                    Heure (optionnel)
+                  </label>
+                  <input
+                    type="time"
+                    name="heure"
+                    value={form.heure}
+                    onChange={handleFormChange}
+                    placeholder="Laisser vide si non précisé"
+                    className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-700 outline-none focus:border-indigo-400 transition-colors"
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">Type</label>
+                <select
+                  name="type"
+                  value={form.type}
+                  onChange={handleFormChange}
+                  className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-700 outline-none focus:border-indigo-400 transition-colors cursor-pointer"
+                >
+                  {TYPE_OPTIONS.map((typeOption) => (
+                    <option key={typeOption} value={typeOption}>{typeOption}</option>
+                  ))}
+                </select>
+              </div>
             </div>
-            <div className="rounded-2xl bg-white/12 border border-white/15 px-4 py-3 backdrop-blur-sm">
-              <p className="text-xs uppercase tracking-widest text-indigo-200">Aujourd'hui</p>
-              <p className="text-3xl font-black mt-1">{todayCount}</p>
+
+            <div className="px-6 py-4 border-t border-gray-100 flex gap-3 justify-end">
+              <button
+                onClick={() => setShowForm(false)}
+                className="px-5 py-2.5 rounded-full border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-50 transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={!form.patient.trim() || !form.date}
+                className="px-5 py-2.5 rounded-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white text-sm font-semibold transition-colors flex items-center gap-2"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
+                  <polyline points="17 21 17 13 7 13 7 21" />
+                </svg>
+                {editTarget ? 'Enregistrer' : 'Ajouter'}
+              </button>
             </div>
           </div>
         </div>
+      )}
+
+      {deleteTarget && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
+            <div className="flex flex-col items-center gap-4 text-center">
+              <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center text-red-400">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <polyline points="3 6 5 6 21 6" />
+                  <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" />
+                  <path d="M10 11v6M14 11v6M9 6V4h6v2" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-800 mb-1">Supprimer le rendez-vous ?</h3>
+                <p className="text-sm text-gray-500">
+                  Rendez-vous de{' '}
+                  <span className="font-semibold text-gray-700">{deleteTarget.patient}</span>{' '}
+                  le <span className="font-semibold text-gray-700">{new Date(deleteTarget.date).toLocaleDateString('fr-FR')}</span>{' '}
+                  à <span className="font-semibold text-gray-700">{deleteTarget.heure}</span>.
+                </p>
+              </div>
+              <div className="flex gap-3 w-full mt-2">
+                <button
+                  onClick={() => setDeleteTarget(null)}
+                  className="flex-1 py-3 rounded-full border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-50 transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  className="flex-1 py-3 rounded-full bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition-colors"
+                >
+                  Supprimer
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-800">Rendez-vous</h1>
+          <p className="text-sm text-gray-400 mt-1">Gérez le planning et les rendez-vous des patients.</p>
+        </div>
+        <button
+          onClick={openAddForm}
+          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-5 py-3 rounded-2xl transition-colors"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+          Nouveau rendez-vous
+        </button>
       </div>
 
-      <div className="grid xl:grid-cols-[1.05fr_0.95fr] gap-6 items-start">
-        <section className="rounded-[1.75rem] border border-gray-100 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between gap-4 mb-6">
-            <div>
-              <p className="text-sm font-bold text-gray-500 uppercase tracking-widest">Nouveau rendez-vous</p>
-              <h2 className="text-2xl font-black text-gray-900 mt-1">Sélectionner un patient ou créer un nouveau dossier</h2>
+      <div className="grid grid-cols-3 gap-4">
+        {[
+          {
+            label: "Aujourd'hui",
+            value: todayCount,
+            icon: (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <rect x="3" y="4" width="18" height="18" rx="2" />
+                <path d="M16 2v4M8 2v4M3 10h18" />
+              </svg>
+            ),
+            color: 'bg-indigo-100 text-indigo-500',
+            valueColor: 'text-indigo-700',
+          },
+          {
+            label: 'Cette semaine',
+            value: weekCount,
+            icon: (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <rect x="3" y="4" width="18" height="18" rx="2" />
+                <path d="M16 2v4M8 2v4M3 10h18M8 14h.01M12 14h.01M16 14h.01" />
+              </svg>
+            ),
+            color: 'bg-cyan-100 text-cyan-500',
+            valueColor: 'text-cyan-700',
+          },
+          {
+            label: 'Total',
+            value: totalCount,
+            icon: (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <path d="M3 7h18M3 12h18M3 17h18" />
+              </svg>
+            ),
+            color: 'bg-emerald-100 text-emerald-500',
+            valueColor: 'text-emerald-700',
+          },
+        ].map((stat) => (
+          <div key={stat.label} className="bg-white rounded-2xl border border-gray-100 p-5 flex items-center gap-4">
+            <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${stat.color}`}>
+              {stat.icon}
             </div>
-            <div className="rounded-2xl bg-indigo-50 border border-indigo-100 px-4 py-3 text-right">
-              <p className="text-xs font-semibold text-indigo-600 uppercase tracking-[0.3em]">Patients</p>
-              <p className="text-2xl font-black text-indigo-700">{loadingPatients ? '...' : patients.length}</p>
+            <div>
+              <p className="text-xs text-gray-400 font-medium">{stat.label}</p>
+              <p className={`text-2xl font-bold mt-0.5 ${stat.valueColor}`}>{stat.value}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex gap-5 items-start">
+        <div className="w-80 flex-shrink-0 flex flex-col gap-4">
+          <div className="bg-white rounded-2xl border border-gray-100 p-5">
+            <div className="flex items-center justify-between mb-5">
+              <button
+                onClick={prevMonth}
+                className="w-8 h-8 rounded-lg border border-gray-100 hover:bg-gray-50 flex items-center justify-center text-gray-400 transition-colors"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M15 18l-6-6 6-6" />
+                </svg>
+              </button>
+              <p className="text-sm font-bold text-gray-800 capitalize">
+                {MONTHS_FR[calMonth]} {calYear}
+              </p>
+              <button
+                onClick={nextMonth}
+                className="w-8 h-8 rounded-lg border border-gray-100 hover:bg-gray-50 flex items-center justify-center text-gray-400 transition-colors"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M9 18l6-6-6-6" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-7 mb-2">
+              {DAYS_FR.map((dayLabel) => (
+                <div key={dayLabel} className="text-center text-xs font-semibold text-gray-400 py-1">{dayLabel}</div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-7 gap-y-1">
+              {Array.from({ length: firstDay }).map((_, index) => (
+                <div key={`empty-${index}`} />
+              ))}
+
+              {Array.from({ length: daysInMonth }, (_, index) => {
+                const day = index + 1
+                const dateStr = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+                const hasAppt = !!apptsByDate[dateStr]
+                const count = apptsByDate[dateStr]?.length || 0
+                const isToday = dateStr === todayStr
+                const isSelected = dateStr === selectedDate
+
+                return (
+                  <button
+                    key={day}
+                    onClick={() => {
+                      if (selectedDate === dateStr) {
+                        setSelectedDate(null)
+                        setViewMode('all')
+                      } else {
+                        setSelectedDate(dateStr)
+                        setViewMode('day')
+                      }
+                    }}
+                    className={`relative flex flex-col items-center justify-center h-9 w-9 mx-auto rounded-xl text-xs font-semibold transition-all ${
+                      isSelected ? 'bg-indigo-600 text-white shadow-md' : isToday ? 'bg-indigo-100 text-indigo-700' : hasAppt ? 'hover:bg-indigo-50 text-gray-700' : 'text-gray-400 hover:bg-gray-50'
+                    }`}
+                  >
+                    {day}
+                    {hasAppt && !isSelected && (
+                      <span className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5">
+                        {Array.from({ length: Math.min(count, 3) }).map((_, dotIndex) => (
+                          <span key={dotIndex} className={`w-1 h-1 rounded-full ${isToday ? 'bg-indigo-500' : 'bg-indigo-400'}`} />
+                        ))}
+                      </span>
+                    )}
+                    {hasAppt && isSelected && <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-white" />}
+                  </button>
+                )
+              })}
+            </div>
+
+            <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-center gap-4">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-indigo-400" />
+                <span className="text-xs text-gray-400">RDV planifié</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-indigo-100 border border-indigo-300" />
+                <span className="text-xs text-gray-400">Aujourd'hui</span>
+              </div>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-2 relative" ref={searchWrapRef}>
-              <label className="text-sm font-bold text-gray-700">Patient</label>
-              <input
-                value={patientQuery}
-                onChange={(event) => {
-                  setPatientQuery(event.target.value)
-                  setShowSuggestions(true)
-                  setSelectedPatient(null)
-                  setCreatingPatient(true)
-                }}
-                onFocus={() => setShowSuggestions(true)}
-                placeholder="Tapez le nom, l'ID ou le téléphone..."
-                className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-base outline-none focus:border-indigo-500 focus:bg-white transition-colors"
-              />
-              {showSuggestions && (
-                <div className="absolute z-20 mt-2 w-full rounded-2xl border border-gray-200 bg-white shadow-xl overflow-hidden">
-                  {loadingPatients ? (
-                    <div className="px-4 py-3 text-sm text-gray-500">Chargement...</div>
-                  ) : filteredPatients.length > 0 ? (
-                    filteredPatients.map((patient) => (
+          {selectedDate && (
+            <div className="bg-white rounded-2xl border border-gray-100 p-5">
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-sm font-bold text-gray-800">
+                  {new Date(selectedDate + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                </p>
+                <button onClick={openAddForm} className="w-7 h-7 rounded-lg bg-indigo-600 hover:bg-indigo-700 flex items-center justify-center text-white transition-colors">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M12 5v14M5 12h14" />
+                  </svg>
+                </button>
+              </div>
+              {(apptsByDate[selectedDate] || []).length === 0 ? (
+                <p className="text-xs text-gray-400 text-center py-4">Aucun rendez-vous ce jour</p>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {(apptsByDate[selectedDate] || []).sort((a, b) => getTimeSortValue(a.heure).localeCompare(getTimeSortValue(b.heure))).map((appointment) => (
+                    <div key={appointment.id} className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-indigo-500 w-24 flex-shrink-0">{formatTime(appointment.heure)}</span>
+                      <div className="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-indigo-400" />
+                      <span className="text-xs text-gray-700 font-medium truncate">{appointment.patient}</span>
                       <button
-                        key={patient.id}
                         type="button"
-                        onClick={() => selectPatient(patient)}
-                        className="w-full text-left px-4 py-3 hover:bg-indigo-50 border-b border-gray-50 last:border-b-0"
+                        onClick={() => appointment.patient_id && navigate(`/consultation/${appointment.patient_id}`)}
+                        disabled={!appointment.patient_id}
+                        title={appointment.patient_id ? 'Démarrer la consultation de ce patient' : 'Patient sans identifiant'}
+                        className="ml-auto w-7 h-7 rounded-lg bg-indigo-50 hover:bg-indigo-100 disabled:opacity-40 disabled:hover:bg-indigo-50 text-indigo-600 flex items-center justify-center transition-colors"
                       >
-                        <div className="font-bold text-gray-900">{patientLabel(patient)}</div>
-                        <div className="text-xs text-gray-500">ID patient: {patient.id}</div>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <path d="M12 5v14M5 12h14" />
+                        </svg>
                       </button>
-                    ))
-                  ) : (
-                    <div className="px-4 py-3 space-y-2">
-                      <div className="text-sm text-gray-500">Aucun patient trouvé</div>
-                      {typedPatientName && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setCreatingPatient(true)
-                            setShowSuggestions(false)
-                          }}
-                          className="w-full rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3 text-left text-sm font-semibold text-indigo-800 hover:bg-indigo-100"
-                        >
-                          Créer un nouveau patient: <span className="font-black">{typedPatientName}</span>
-                        </button>
-                      )}
                     </div>
-                  )}
+                  ))}
                 </div>
               )}
             </div>
+          )}
+        </div>
 
-            {(selectedPatient || isNewPatientFlow || creatingPatient) && (
-              <div className="rounded-2xl border border-indigo-100 bg-indigo-50 px-4 py-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-widest text-indigo-600">
-                      {resolvedPatient ? 'Patient sélectionné' : 'Nouveau patient'}
-                    </p>
-                    <p className="text-base font-black text-indigo-900 mt-1">
-                      {resolvedPatient ? patientLabel(resolvedPatient) : typedPatientName}
-                    </p>
-                    {!resolvedPatient && (
-                      <p className="text-xs font-medium text-indigo-700 mt-1">
-                        Un nouveau patient sera créé lors de l'enregistrement.
-                      </p>
-                    )}
-                  </div>
+        <div className="flex-1">
+          <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <div>
+                <h2 className="text-base font-bold text-gray-800">
+                  {viewMode === 'day' && selectedDate
+                    ? `Rendez-vous du ${new Date(selectedDate + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}`
+                    : 'Tous les rendez-vous'}
+                </h2>
+                <p className="text-xs text-gray-400 mt-0.5">{displayedAppointments.length} rendez-vous</p>
+              </div>
+              <div className="flex items-center gap-2">
+                {selectedDate && (
                   <button
-                    type="button"
                     onClick={() => {
-                      setSelectedPatient(null)
-                      setPatientQuery('')
-                      setCreatingPatient(false)
+                      setSelectedDate(null)
+                      setViewMode('all')
                     }}
-                    className="text-sm font-bold text-indigo-700 hover:text-indigo-900"
+                    className="flex items-center gap-1.5 text-xs text-indigo-500 hover:text-indigo-700 font-medium border border-indigo-200 px-3 py-1.5 rounded-full transition-colors"
                   >
-                    Changer
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                    Voir tout
                   </button>
+                )}
+              </div>
+            </div>
+
+            {displayedAppointments.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 gap-3">
+                <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center text-gray-300">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <rect x="3" y="4" width="18" height="18" rx="2" />
+                    <path d="M16 2v4M8 2v4M3 10h18" />
+                  </svg>
                 </div>
-              </div>
-            )}
-
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700">Date</label>
-                <input
-                  type="date"
-                  value={form.appointment_date}
-                  onChange={(event) => setForm((prev) => ({ ...prev, appointment_date: event.target.value }))}
-                  className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-base outline-none focus:border-indigo-500 focus:bg-white transition-colors"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700">Heure <span className="text-gray-400 font-semibold">(facultatif)</span></label>
-                <input
-                  type="time"
-                  value={form.appointment_time}
-                  onChange={(event) => setForm((prev) => ({ ...prev, appointment_time: event.target.value }))}
-                  placeholder="Optionnelle"
-                  className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-base outline-none focus:border-indigo-500 focus:bg-white transition-colors"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Motif</label>
-              <input
-                value={form.reason}
-                onChange={(event) => setForm((prev) => ({ ...prev, reason: event.target.value }))}
-                placeholder="Contrôle, résultats, suivi..."
-                className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-base outline-none focus:border-indigo-500 focus:bg-white transition-colors"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Notes</label>
-              <textarea
-                rows={4}
-                value={form.notes}
-                onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))}
-                placeholder="Observations rapides ou consignes"
-                className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-base outline-none focus:border-indigo-500 focus:bg-white transition-colors resize-none"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={saving || !typedPatientName || !form.appointment_date}
-              className="w-full rounded-2xl bg-indigo-600 px-5 py-4 text-white font-black text-lg shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 disabled:opacity-60 transition-colors"
-            >
-              {saving
-                ? 'Enregistrement...'
-                : resolvedPatient
-                  ? 'Enregistrer le rendez-vous'
-                  : 'Créer le patient et enregistrer le rendez-vous'}
-            </button>
-
-            <p className="text-xs text-gray-500 text-center">
-              Si vous ne sélectionnez pas un patient existant, le nom saisi créera un nouveau dossier patient.
-            </p>
-          </form>
-        </section>
-
-        <section className="rounded-[1.75rem] border border-gray-100 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <p className="text-sm font-bold text-gray-500 uppercase tracking-widest">Planning</p>
-              <h2 className="text-2xl font-black text-gray-900 mt-1">Rendez-vous à venir</h2>
-            </div>
-            <div className="rounded-2xl bg-gray-50 border border-gray-100 px-4 py-3 text-right">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-[0.3em]">Chargement</p>
-              <p className="text-2xl font-black text-gray-900">{loadingAppointments ? '...' : appointments.length}</p>
-            </div>
-          </div>
-
-          <div className="space-y-3 max-h-[72vh] overflow-y-auto pr-1">
-            {loadingAppointments ? (
-              <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-10 text-center text-gray-500">
-                Chargement des rendez-vous...
-              </div>
-            ) : sortedAppointments.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-10 text-center">
-                <p className="text-lg font-bold text-gray-700">Aucun rendez-vous pour le moment</p>
-                <p className="text-sm text-gray-500 mt-2">Créez votre premier rendez-vous à gauche.</p>
+                <p className="text-sm text-gray-400">Aucun rendez-vous ce jour</p>
+                <button onClick={openAddForm} className="flex items-center gap-1.5 text-indigo-500 hover:text-indigo-700 text-sm font-medium transition-colors">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M12 5v14M5 12h14" />
+                  </svg>
+                  Ajouter un rendez-vous
+                </button>
               </div>
             ) : (
-              sortedAppointments.map((appointment) => (
-                <article key={appointment.id} className="rounded-2xl border border-gray-100 bg-gradient-to-br from-white to-gray-50 p-5 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-3 flex-wrap">
-                        <h3 className="text-lg font-black text-gray-900">{appointment.patient_name || `Patient #${appointment.patient_id}`}</h3>
-                        <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-bold text-green-700 uppercase tracking-wider">
-                          {appointment.status || 'confirmed'}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-500">
-                        {appointment.appointment_date}{appointment.appointment_time ? ` • ${appointment.appointment_time}` : ' • Sans heure'}
-                      </p>
-                      <p className="text-sm text-gray-700 font-medium">
-                        {appointment.reason || 'Sans motif'}
-                      </p>
-                      {appointment.notes && (
-                        <p className="text-sm text-gray-500 mt-2">{appointment.notes}</p>
-                      )}
-                    </div>
-                    <button
-                      onClick={() => deleteAppointment(appointment.id)}
-                      disabled={deletingId === appointment.id}
-                      className="shrink-0 rounded-xl border border-red-100 bg-white px-3 py-2 text-sm font-bold text-red-600 hover:bg-red-50 disabled:opacity-50"
-                    >
-                      {deletingId === appointment.id ? 'Suppression...' : 'Supprimer'}
-                    </button>
-                  </div>
-                </article>
-              ))
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-gray-50">
+                    <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-3">Patient</th>
+                    <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-3">Date & Heure</th>
+                    <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-3">Type</th>
+                    <th className="text-right text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-3">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {displayedAppointments.map((appointment) => {
+                    const dateObj = new Date(appointment.date + 'T12:00:00')
+                    const dateDisplay = dateObj.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
+                    const isPast = appointment.date < todayStr
+
+                    return (
+                      <tr key={appointment.id} className={`border-t border-gray-50 hover:bg-gray-50 transition-colors ${isPast ? 'opacity-60' : ''}`}>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${appointment.color}`}>
+                              {getInitials(appointment.patient)}
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-gray-800">{appointment.patient}</p>
+                              {appointment.phone && <p className="text-xs text-gray-400">{appointment.phone}</p>}
+                            </div>
+                          </div>
+                        </td>
+
+                        <td className="px-6 py-4">
+                          <p className="text-sm text-gray-700 font-medium">{dateDisplay}</p>
+                          <p className="text-xs text-indigo-500 font-bold mt-0.5">{formatTime(appointment.heure)}</p>
+                        </td>
+
+                        <td className="px-6 py-4">
+                          <span className="text-xs font-medium bg-gray-100 text-gray-600 px-3 py-1.5 rounded-full">{appointment.type}</span>
+                        </td>
+
+                        <td className="px-6 py-4">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => appointment.patient_id && navigate(`/consultation/${appointment.patient_id}`)}
+                              disabled={!appointment.patient_id}
+                              title={appointment.patient_id ? 'Démarrer la consultation' : 'Patient sans identifiant'}
+                              className="w-8 h-8 rounded-lg bg-indigo-50 hover:bg-indigo-100 disabled:opacity-40 disabled:hover:bg-indigo-50 text-indigo-500 flex items-center justify-center transition-colors"
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                                <rect x="3" y="3" width="18" height="18" rx="2" />
+                                <path d="M12 8v8M8 12h8" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => openEditForm(appointment)}
+                              className="w-8 h-8 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-500 flex items-center justify-center transition-colors"
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+                                <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => setDeleteTarget(appointment)}
+                              className="w-8 h-8 rounded-lg bg-red-50 hover:bg-red-100 text-red-400 flex items-center justify-center transition-colors"
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                                <polyline points="3 6 5 6 21 6" />
+                                <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" />
+                                <path d="M10 11v6M14 11v6M9 6V4h6v2" />
+                              </svg>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
             )}
           </div>
-        </section>
+        </div>
       </div>
     </div>
   )

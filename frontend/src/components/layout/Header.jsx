@@ -139,7 +139,7 @@ export default function Header() {
 
               {/* Settings link */}
               <button
-                onClick={() => { setDropdownOpen(false) }}
+                onClick={() => { navigate(ROUTES.PARAMETERS); setDropdownOpen(false) }}
                 className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -147,6 +147,18 @@ export default function Header() {
                   <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
                 </svg>
                 Paramètres
+              </button>
+
+              {/* Contact link */}
+              <button
+                onClick={() => { navigate(ROUTES.CONTACT); setDropdownOpen(false) }}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M12 8v4M12 16h.01" />
+                </svg>
+                Contact
               </button>
 
               {/* Divider */}

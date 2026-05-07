@@ -207,31 +207,27 @@ export default function Sidebar() {
           Recette
         </NavLink>
 
-        {/* Contact */}
-        <NavLink
-          to={ROUTES.CONTACT}
-          className={({ isActive }) =>
-            `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all relative
-            ${isActive
-              ? 'text-indigo-700 font-semibold bg-indigo-50 before:absolute before:left-0 before:top-2 before:bottom-2 before:w-0.5 before:bg-indigo-600 before:rounded-full'
-              : 'text-gray-500 hover:text-indigo-600 hover:bg-gray-50'
-            }`
-          }
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-            <circle cx="12" cy="12" r="10" />
-            <path d="M12 8v4M12 16h.01" />
-          </svg>
-          Contact
-        </NavLink>
-
       </nav>
 
       {/* Spacer */}
       <div className="flex-1" />
 
-      {/* New Consultation button */}
-      <div className="px-2 pb-2">
+      {/* Quick Action Buttons */}
+      <div className="px-2 pb-2 flex flex-col gap-2">
+        {/* Nouveau Patient Button */}
+        <button
+          onClick={() => navigate(ROUTES.ADD_PATIENT)}
+          className="w-full flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white text-sm font-bold py-3 px-4 rounded-full transition-all shadow-md"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <circle cx="10" cy="7" r="4" />
+            <path d="M10 15H6a4 4 0 00-4 4" />
+            <path d="M19 12v6M16 15h6" />
+          </svg>
+          Nouveau patient
+        </button>
+
+        {/* Nouvelle Consultation Button */}
         <button
           onClick={() => navigate(ROUTES.CONSULTATION.replace('/:patientId', ''))}
           className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-base font-black py-4 px-4 rounded-full transition-all shadow-md"
