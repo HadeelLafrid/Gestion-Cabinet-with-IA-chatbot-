@@ -2,6 +2,8 @@ from fastapi import Depends, HTTPException, status
 from sqlmodel import Session
 from app.db.session import get_session
 from app.services.authenticationService import authenticate_user
+from app.models import User
+from sqlmodel import select
 
 def login_controller(username: str, password: str, db: Session = Depends(get_session)):
     user = authenticate_user(db, username, password)
@@ -19,3 +21,7 @@ def login_controller(username: str, password: str, db: Session = Depends(get_ses
             "photo": user.photo if hasattr(user, 'photo') else None,
         }
     }
+
+def has_users_controller(db: Session = Depends(get_session)):
+    user = db.exec(select(User)).first()
+    return {"has_users": user is not None}

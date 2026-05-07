@@ -13,3 +13,7 @@ class LoginRequest(BaseModel):
 @router.post("/login", status_code=200)
 def login(data: LoginRequest, db: Session = Depends(get_session)):
     return authenticationController.login_controller(data.username, data.password, db)
+
+@router.get("/has-users", status_code=200)
+def has_users(db: Session = Depends(get_session)):
+    return authenticationController.has_users_controller(db)

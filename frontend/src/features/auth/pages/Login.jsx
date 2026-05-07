@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ROUTES } from '../../../constants/routes'
 import { useAuth } from '../../../hooks/useAuth'
@@ -14,6 +14,16 @@ export default function Login() {
 
   const { login } = useAuth()
   const navigate = useNavigate()
+
+  useEffect(() => {
+    apiClient.get('/auth/has-users')
+      .then(res => {
+        if (!res.data.has_users) {
+          navigate(ROUTES.REGISTER, { replace: true })
+        }
+      })
+      .catch(console.error)
+  }, [navigate])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
