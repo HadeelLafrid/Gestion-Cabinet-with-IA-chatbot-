@@ -844,12 +844,13 @@ export default function NewConsultation() {
           <p className="text-lg font-extrabold text-gray-800">{patient.genre}</p>
         </div>
         <div className="ml-auto flex items-center gap-3">
-          <span className="text-sm font-bold bg-indigo-100 text-indigo-700 px-5 py-2 rounded-full shadow-sm">
-            Consultation en cours
-          </span>
-          <span className="text-sm font-bold bg-gray-100 text-gray-700 px-5 py-2 rounded-full border border-gray-200">
-            Dr. Jean Dupont
-          </span>
+          <button
+            type="button"
+            onClick={() => navigate(`/patients/${patient.id}`)}
+            className="text-sm font-semibold bg-white border border-indigo-100 text-indigo-700 px-4 py-2 rounded-full shadow-sm hover:bg-indigo-50 transition-colors"
+          >
+            Voir le patient
+          </button>
         </div>
       </div>
 
