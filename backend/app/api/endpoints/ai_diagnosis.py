@@ -60,7 +60,7 @@ async def predict_consultation(data: SymptomsInput, db: Session = Depends(get_se
                 target_age = today.year - patient.date_of_birth.year - ((today.month, today.day) < (patient.date_of_birth.month, patient.date_of_birth.day))
             
             target_gender = patient.gender or target_gender
-            history_context += f"- Nom du patient: {patient.first_name} {patient.last_name}\n"
+            history_context += f"- Patient ID: {patient.id}\n"
             history_context += f"- Antécédents personnels: {patient.personal_history or 'Aucun'}\n"
             history_context += f"- Antécédents familiaux: {patient.family_history or 'Aucun'}\n"
 

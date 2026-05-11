@@ -81,7 +81,7 @@ async def generate_resume(data: ResumeInput, db: Session = Depends(get_session))
 Voici les détails d'une consultation médicale:
 
 INFORMATIONS PATIENT:
-- Nom: {data.patient_name}
+- Nom: Anonymisé
 - ID Patient: {data.patient_id}
 - Âge: {data.age}
 - Genre: {data.gender}
@@ -182,7 +182,7 @@ async def generate_patient_recap(patient_id: int, db: Session = Depends(get_sess
     if not patient:
         raise HTTPException(status_code=404, detail="Patient non trouvé")
         
-    history_context = f"Patient: {patient.first_name} {patient.last_name}\n"
+    history_context = f"Patient ID: {patient.id}\n"
     history_context += f"Antécédents: {patient.personal_history or 'Aucun'}\n"
     
     past_consultations = db.exec(

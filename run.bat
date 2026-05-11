@@ -22,6 +22,19 @@ if not exist "%SHORTCUT_PATH%" (
     echo ✅ Raccourci créé avec succès !
 )
 
+echo [0/2] Initialisation de la base de donnees...
+if not exist "%PROJECT_ROOT%backend\db_initialized.lock" (
+    cd /D "%PROJECT_ROOT%backend"
+    python -m pip install -r requirements.txt
+    python -m alembic upgrade head
+    python scripts\load_legacy_dump.py --dump-file ..\gestcab_anonymized.sql
+    echo true > db_initialized.lock
+    cd /D "%PROJECT_ROOT%"
+    echo ✅ Base de donnees initialisee.
+) else (
+    echo ✅ Base de donnees deja initialisee.
+)
+
 echo [1/2] Lancement du Backend...
 start /D "%PROJECT_ROOT%backend" /B python server.py
 

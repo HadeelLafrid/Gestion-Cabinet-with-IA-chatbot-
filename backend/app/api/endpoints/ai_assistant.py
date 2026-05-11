@@ -67,8 +67,7 @@ def build_patient_context(db, patient_id: Optional[int]) -> str:
     if not patient:
         return "Patient not found."
 
-    name = f"{patient.first_name or ''} {patient.last_name or ''}".strip() or "Unknown"
-    ctx = [f"Name: {name}"]
+    ctx = [f"Patient ID: {patient.id}"]
     if patient.date_of_birth:
         ctx.append(f"Date of birth: {patient.date_of_birth}")
     if patient.gender:

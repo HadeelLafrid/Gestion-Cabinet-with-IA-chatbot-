@@ -221,8 +221,8 @@ def load_dump(dump_path: Path) -> None:
         payload = {
             "id": patient_id,
             "chifa_card_number": _clean_str(row.get("CHIFA")),
-            "first_name": f"mohamed{i}",
-            "last_name": "Patient",
+            "first_name": _clean_str(row.get("PRENOM")) or f"Patient{i}",
+            "last_name": _clean_str(row.get("NOM")) or "",
             "date_of_birth": None,
             "gender": _parse_gender(row.get("CIVIL")),
             "marital_status": _clean_str(row.get("SITUATION")),

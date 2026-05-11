@@ -84,7 +84,7 @@ async def predict_consultation(data: SymptomsInput, db: Session = Depends(get_se
                 target_age = today.year - patient.date_of_birth.year - ((today.month, today.day) < (patient.date_of_birth.month, patient.date_of_birth.day))
             
             target_gender = patient.gender or target_gender
-            history_context += f"- Nom du patient: {patient.first_name} {patient.last_name}\n"
+            history_context += f"- Patient ID: {patient.id}\n"
             history_context += f"- Antécédents personnels: {patient.personal_history or 'Aucun'}\n"
             history_context += f"- Antécédents familiaux: {patient.family_history or 'Aucun'}\n"
 
@@ -197,7 +197,7 @@ async def chat_consultation(data: ChatInput):
         raise HTTPException(status_code=500, detail="Clé API GROQ manquante")
 
     patient = data.context.patient
-    patient_info = f"{patient.get('name', 'Inconnu')} ({patient.get('age', 'Âge inconnu')}, {patient.get('genre', 'Genre inconnu')})"
+    patient_info = f"Patient ID: {patient.get('id', 'Inconnu')} ({patient.get('age', 'Âge inconnu')}, {patient.get('genre', 'Genre inconnu')})"
     
     diagnostic_str = ", ".join(data.context.diagnostic) if data.context.diagnostic else "Aucun diagnostic posé"
     treatments_str = "\n".join([f"- {t.get('name')}: {t.get('instruction')}" for t in data.context.treatments]) if data.context.treatments else "Aucun traitement"
