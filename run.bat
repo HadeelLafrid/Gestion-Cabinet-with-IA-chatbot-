@@ -22,7 +22,13 @@ if not exist "%SHORTCUT_PATH%" (
     echo ✅ Raccourci créé avec succès !
 )
 
-echo [0/2] Initialisation de la base de donnees...
+echo [0/3] Démarrage de Docker (Base de données)...
+cd /D "%PROJECT_ROOT%"
+docker-compose up -d
+echo Attente de 5 secondes pour que la base de donnees soit prete...
+timeout /t 5 /nobreak > NUL
+
+echo [1/3] Initialisation de la base de donnees...
 if not exist "%PROJECT_ROOT%backend\db_initialized.lock" (
     cd /D "%PROJECT_ROOT%backend"
     python -m pip install -r requirements.txt
@@ -35,10 +41,10 @@ if not exist "%PROJECT_ROOT%backend\db_initialized.lock" (
     echo ✅ Base de donnees deja initialisee.
 )
 
-echo [1/2] Lancement du Backend...
+echo [2/3] Lancement du Backend...
 start /D "%PROJECT_ROOT%backend" /B python server.py
 
-echo [2/2] Lancement du Frontend...
+echo [3/3] Lancement du Frontend...
 start /D "%PROJECT_ROOT%frontend" /B npm run dev
 
 echo.
