@@ -4,39 +4,31 @@ import { ROUTES } from '../../../constants/routes'
 import Step1PersonalInfo from '../components/PatientForm/Step1PersonalInfo'
 import Step2Medical from '../components/PatientForm/Step2Medical'
 import Step3Documents from '../components/PatientForm/Step3Documents'
+import Step4Consultation from '../components/PatientForm/Step4Consultation'
+
 
 const steps = [
-  { id: 1, label: 'Informations Personnelles', sub: 'Identité et contact' },
-  { id: 2, label: 'Consultation & Médical',    sub: 'Paramètres et antécédents' },
-  { id: 3, label: 'Documents & Notes',         sub: 'Pièces jointes et observations' },
+  { id: 1, label: 'Informations Personnelles', sub: 'Identité et contact'          },
+  { id: 2, label: 'Consultation & Médical',    sub: 'Paramètres et antécédents'    },
+  { id: 3, label: 'Documents & Notes',         sub: 'Pièces jointes et observations'}
 ]
 
 export default function AddPatient() {
   const navigate = useNavigate()
   const [currentStep, setCurrentStep] = useState(1)
   const [form, setForm] = useState({
-    // Step 1
-    carteChifa:     '',
-    civilite:       'Mr',
-    nom:            '',
-    prenom:         '',
-    ageAns:         '',
-    ageMois:        '',
-    profession:     '',
-    sitFamiliale:   'Célibataire',
-    nbEnfants:      '0',
-    telephone:      '',
-    adresse:        '',
-    // Step 2
-    poids:          '',
-    taille:         '',
-    antecedentsPerso:    '',
-    antecedentsFamiliaux:'',
-    notes:          '',
-    // Step 3
-    documents:      [],
-    observations:   '',
-  })
+  // Step 1
+  carteChifa: '', civilite: 'Mr', nom: '', prenom: '',
+  date_of_birth: '', profession: '', sitFamiliale: 'Célibataire',
+  nbEnfants: '0', telephone: '', adresse: '',
+  // Step 2
+  poids: '', taille: '', antecedentsPerso: '', antecedentsFamiliaux: '', notes: '',
+  // Step 3
+  documents: [], observations: '',
+  // Step 4
+  motif: '', observations_consult: '', diagnostic: '', severite: '',
+  medications: [], montant: '', modePaiement: 'especes', consultationNotes: '',
+})
 
   const updateForm = (fields) => setForm((prev) => ({ ...prev, ...fields }))
 
@@ -44,22 +36,49 @@ export default function AddPatient() {
     ? (parseFloat(form.poids) / Math.pow(parseFloat(form.taille) / 100, 2)).toFixed(1)
     : null
 
-  const handleSave = () => {
-    console.log('Patient data:', form)
-    navigate(ROUTES.PATIENTS)
-  }
-
-  const handleReset = () => {
-    setForm({
-      carteChifa: '', civilite: 'Mr', nom: '', prenom: '',
-      ageAns: '', ageMois: '', profession: '', sitFamiliale: 'Célibataire',
-      nbEnfants: '0', telephone: '', adresse: '',
-      poids: '', taille: '', antecedentsPerso: '',
-      antecedentsFamiliaux: '', notes: '',
-      documents: [], observations: '',
+  const handleSave = async () => {
+  const response = await fetch('http://localhost:8000/api/v1/patients/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      chifa_card_number: form.carteChifa || null,
+      first_name:        form.prenom || null,   // ← prenom → first_name
+      last_name:         form.nom || null,       // ← nom → last_name
+      date_of_birth:     form.date_of_birth || null,
+      gender:            form.civilite === 'Mr' ? 'male' : 'female',
+      marital_status:    form.sitFamiliale || null,
+      profession:        form.profession || null,
+      phone:             form.telephone || null,
+      address:           form.adresse || null,
+      weight:            parseFloat(form.poids) || null,
+      height:            parseFloat(form.taille) || null,
+      personal_history:  form.antecedentsPerso || null,
+      family_history:    form.antecedentsFamiliaux || null,
+      notes:             form.notes || null,
+      general_observation: form.observations || null,
     })
-    setCurrentStep(1)
+  })
+
+  if (response.ok) {
+    const data = await response.json();
+    navigate(`/consultation/${data.id}`)
+  } else {
+    alert('Erreur lors de la création du patient')
   }
+}
+
+ const handleReset = () => {
+  setForm({
+    carteChifa: '', civilite: 'Mr', nom: '', prenom: '',
+    date_of_birth: '', profession: '', sitFamiliale: 'Célibataire',
+    nbEnfants: '0', telephone: '', adresse: '',
+    poids: '', taille: '', antecedentsPerso: '', antecedentsFamiliaux: '', notes: '',
+    documents: [], observations: '',
+    motif: '', diagnostic: '', severite: '',
+    medications: [], montant: '', modePaiement: 'especes', consultationNotes: '',
+  })
+  setCurrentStep(1)
+}
 
   return (
     <div className="min-h-screen bg-[#f0f2f9]">
@@ -192,20 +211,20 @@ export default function AddPatient() {
                   <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
                   <polyline points="17 21 17 13 7 13 7 21" />
                 </svg>
-                Enregistrer
+                Enregistrer et démarrer la consultation
               </button>
             )}
           </div>
         </div>
       </div>
 
-      {/* Floating Assistant IA button */}
+      {/* Floating Assistant IA button
       <button className="fixed bottom-6 left-72 flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-5 py-3 rounded-full shadow-lg transition-colors z-50">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
         </svg>
         Assistant IA
-      </button>
+      </button> */}
     </div>
   )
 }

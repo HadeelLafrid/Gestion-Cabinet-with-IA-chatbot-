@@ -12,7 +12,8 @@ export const ROUTES = {
   ADD_APPOINTMENT: '/appointments/add',
   PAYMENTS: '/payments',
   PROFILE: '/profile',
-  CONTACT:          '/contact',
+  PARAMETERS: '/parameters',
+  CONTACT: '/contact',
   EDIT_PROFILE: '/profile/edit',
   CONSULTATION_ARCHIVE: '/consultations/archive',
 }

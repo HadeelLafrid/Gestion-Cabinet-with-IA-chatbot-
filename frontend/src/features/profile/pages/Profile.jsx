@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../../../hooks/useAuth'
 import { ROUTES } from '../../../constants/routes'
+import apiClient from '../../../services/apiClient'
 
 const specializations = [
   'Cardiologie', 'Neurologie', 'Pédiatrie', 'Chirurgie',
@@ -12,23 +12,45 @@ const specializations = [
 const languages = ['Français', 'Anglais', 'Arabe', 'Espagnol', 'Allemand']
 
 export default function Profile() {
-  const { user } = useAuth()
   const navigate = useNavigate()
   const [photo, setPhoto] = useState(null)
+  const [backupLoading, setBackupLoading] = useState(false)
+  
+  // ← empty defaults, useEffect will fill them
   const [form, setForm] = useState({
-    firstName:       user?.name?.split(' ')[1] || 'Lafrid',
-    lastName:        user?.name?.split(' ')[0] || 'Hadil',
-    email:           user?.email || 'Hadillafrid@gmail.com',
-    phone:           user?.phone || '+213',
-    dob:             '10.12.1980',
-    sex:             'female',
-    facilityName:    'Arbi si ahmed ',
-    facilityAddress: 'Saad dahlab blida',
-    specialization:  user?.specialty || '',
+    firstName:       '',
+    lastName:        '',
+    email:           '',
+    phone:           '',
+    dob:             '',
+    sex:             'male',
+    facilityName:    '',
+    facilityAddress: '',
+    specialization:  '',
     experience:      '',
     languages:       '',
   })
 
+  useEffect(() => {
+    apiClient.get('/api/v1/profile/')
+      .then(res => {
+        const data = res.data
+        setForm({
+          firstName:       data.first_name || '',
+          lastName:        data.last_name || '',
+          email:           data.email || '',
+          phone:           data.phone || '',
+          dob:             data.date_of_birth || '',
+          sex:             data.sex || 'male',
+          facilityName:    data.medical_facility_name || '',
+          facilityAddress: data.medical_facility_address || '',
+          specialization:  data.specialization || '',
+          experience:      data.experience || '',
+          languages:       data.languages || '',
+        })
+      })
+      .catch(err => console.error('Profile fetch error:', err))
+  }, [])
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value })
   }
@@ -41,9 +63,75 @@ export default function Profile() {
     }
   }
 
-  const handleSave = () => {
-    // will connect to API later
-    alert('Modifications enregistrées !')
+  const handleSave = async () => {
+    try {
+      await apiClient.put('/api/v1/profile/', {
+        first_name:               form.firstName,
+        last_name:                form.lastName,
+        email:                    form.email,
+        phone:                    form.phone,
+        sex:                      form.sex,
+        specialization:           form.specialization,
+        experience:               parseInt(form.experience) || null,
+        languages:                form.languages,
+        medical_facility_name:    form.facilityName,
+        medical_facility_address: form.facilityAddress,
+      })
+      alert('Modifications enregistrées !')
+    } catch (err) {
+      console.error('Profile save error:', err)
+      alert('Erreur lors de la sauvegarde.')
+    }
+  }
+
+  const handleBackup = async () => {
+    setBackupLoading(true)
+    try {
+      const response = await apiClient.get('/api/v1/profile/backup', {
+        responseType: 'blob',
+      })
+
+      const contentDisposition = response.headers['content-disposition'] || ''
+      const match = contentDisposition.match(/filename="?([^";]+)"?/i)
+      const fallback = `db_backup_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.sql`
+      const filename = match?.[1] || fallback
+
+      const blobUrl = window.URL.createObjectURL(new Blob([response.data]))
+      const link = document.createElement('a')
+      link.href = blobUrl
+      link.setAttribute('download', filename)
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(blobUrl)
+    } catch (err) {
+      console.error('Backup error:', err)
+
+      let msg = 'Erreur lors de la création du backup.'
+      const payload = err.response?.data
+
+      if (payload instanceof Blob) {
+        try {
+          const text = await payload.text()
+          const parsed = JSON.parse(text)
+          msg = parsed?.detail || parsed?.message || text || msg
+        } catch (_) {
+          // If it's not JSON, show raw text when available
+          try {
+            const text = await payload.text()
+            if (text) msg = text
+          } catch (_) {
+            // keep fallback message
+          }
+        }
+      } else if (payload?.detail || payload?.message) {
+        msg = payload.detail || payload.message
+      }
+
+      alert(msg)
+    } finally {
+      setBackupLoading(false)
+    }
   }
 
   return (
@@ -299,8 +387,21 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Action buttons */}
+        {/* Action Buttons */}
         <div className="flex items-center justify-center gap-4 mt-8">
+
+          <button
+            onClick={handleBackup}
+            disabled={backupLoading}
+            className="flex items-center gap-2 border border-emerald-300 text-emerald-700 hover:bg-emerald-50 text-sm font-semibold py-3 px-8 rounded-full transition-colors disabled:opacity-60"
+          >
+            {backupLoading ? 'Backup...' : 'Backup Database'}
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+          </button>
 
           {/* Cancel */}
           <button

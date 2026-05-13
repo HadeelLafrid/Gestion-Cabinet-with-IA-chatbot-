@@ -1,8 +1,8 @@
-✅ all models, schemas, services, routes, controllers
-✅ migrations/env.py
-✅ migrations/versions/xxxx_initial_tables.py   ← the migration file
-✅ alembic.ini                                  ← but with placeholder URL
-✅ requirements.txt
-✅ server.py
-✅ .gitignore
-❌ .env                                         ← never push this
+.env
+__pycache__/
+*.pyc
+venv/
+.venv/
+alembic.ini
+server.py
+backups/
