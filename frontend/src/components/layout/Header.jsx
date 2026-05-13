@@ -2,8 +2,10 @@ import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { ROUTES } from '../../constants/routes'
+import apiClient from '../../services/apiClient'
 
 export default function Header() {
+  const [profile, setProfile] = useState(null)
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [dropdownOpen, setDropdownOpen] = useState(false)
@@ -20,14 +22,26 @@ export default function Header() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+  useEffect(() => {
+    apiClient.get('/api/v1/profile/')
+      .then(res => setProfile(res.data))
+      .catch(err => console.error('Profile error:', err))
+  }, [])
+
   const handleLogout = () => {
     logout()
     navigate(ROUTES.LOGIN)
   }
 
+  const doctorName = profile
+    ? `Dr. ${profile.first_name} ${profile.last_name}`.trim()
+    : 'Dr. ...'
+
+  const specialization = profile?.specialization || ''
+
   return (
     <header className="fixed top-0 left-52 right-0 h-16 bg-gray-50 border-b border-gray-100 flex items-center px-6 gap-4 z-10">
-
+  
       {/* Search bar */}
       <div className="flex-1 max-w-xl">
         <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-full px-4 py-2">
@@ -38,7 +52,7 @@ export default function Header() {
           <input
             type="text"
             placeholder="Rechercher un patient ou un acte..."
-            className="flex-1 text-sm text-gray-600 placeholder-gray-400 outline-none bg-transparent"
+            className="flex-1 text-base font-bold text-gray-900 placeholder-gray-500 outline-none bg-transparent"
           />
         </div>
       </div>
@@ -70,15 +84,24 @@ export default function Header() {
           >
             <div className="text-right">
               <p className="text-sm font-semibold text-gray-700">
-                {user?.name || 'Dr. Hadil'}
+                {doctorName}
               </p>
               <p className="text-xs text-gray-400 uppercase tracking-wide">
-                {user?.specialty || 'Cardiologue'}
+                {specialization}
               </p>
             </div>
-            <div className="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-semibold text-sm">
-              {user?.name ? user.name.charAt(0) : 'D'}
-            </div>
+            {profile && profile.photo ? (
+              <img
+                src={profile.photo}
+                alt="Profile"
+                className="w-9 h-9 rounded-full object-cover"
+              />
+            ) : (
+              <div className="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-semibold text-sm">
+                {profile?.first_name ? profile.first_name.charAt(0) : 'D'}
+              </div>
+            )}
+
             <svg
               width="14" height="14" viewBox="0 0 24 24" fill="none"
               stroke="#9ca3af" strokeWidth="2"
@@ -95,10 +118,10 @@ export default function Header() {
               {/* Doctor info inside dropdown */}
               <div className="px-4 py-3 border-b border-gray-100">
                 <p className="text-sm font-semibold text-gray-700">
-                  {user?.name || 'Dr. Jean Dupont'}
+                  {doctorName}
                 </p>
                 <p className="text-xs text-gray-400 mt-0.5">
-                  {user?.specialty || 'Cardiologue'}
+                  {specialization}
                 </p>
               </div>
 
@@ -116,7 +139,7 @@ export default function Header() {
 
               {/* Settings link */}
               <button
-                onClick={() => { setDropdownOpen(false) }}
+                onClick={() => { navigate(ROUTES.PARAMETERS); setDropdownOpen(false) }}
                 className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -124,6 +147,18 @@ export default function Header() {
                   <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
                 </svg>
                 Paramètres
+              </button>
+
+              {/* Contact link */}
+              <button
+                onClick={() => { navigate(ROUTES.CONTACT); setDropdownOpen(false) }}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M12 8v4M12 16h.01" />
+                </svg>
+                Contact
               </button>
 
               {/* Divider */}

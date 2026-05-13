@@ -9,10 +9,12 @@ from .consultation_exam import ConsultationExam
 from .payment import Payment
 from .ai_report import AIReport
 from .chat_message import ChatMessage
+from .appointment import Appointment
 
 __all__ = [
     "User", "Patient", "Consultation",
     "Medicine", "ConsultationMedicine",
     "Exam", "ConsultationExam",
-    "Payment", "AIReport", "ChatMessage"
+    "Payment", "AIReport", "ChatMessage",
+    "Appointment"
 ]

@@ -1,6 +1,7 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { ROUTES } from '../../../constants/routes'
+import apiClient from '../../../services/apiClient'
 
 export default function Register() {
   const [form, setForm] = useState({
@@ -11,6 +12,17 @@ export default function Register() {
     password: '',
   })
   const [loading, setLoading] = useState(false)
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    apiClient.get('/auth/has-users')
+      .then(res => {
+        if (res.data.has_users) {
+          navigate(ROUTES.LOGIN, { replace: true })
+        }
+      })
+      .catch(console.error)
+  }, [navigate])
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value })

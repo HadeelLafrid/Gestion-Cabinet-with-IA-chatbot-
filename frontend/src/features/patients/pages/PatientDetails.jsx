@@ -1,27 +1,6 @@
 import { useNavigate, useParams } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ROUTES } from '../../../constants/routes'
-
-const MOCK_PATIENT = {
-  id:               'WM-2024-8842',
-  carteChifa:       '0012 3456 7890 12',
-  civilite:         'Monsieur',
-  nom:              'Benali',
-  prenom:           'Amine',
-  age:              34,
-  poids:            78,
-  taille:           182,
-  sitFamiliale:     'Marié(e)',
-  nbEnfants:        2,
-  profession:       'Ingénieur Logiciel',
-  telephone:        '0550 12 34 56',
-  adresse:          '12 Rue des Oliviers, Alger Centre',
-  antecedentsPerso: 'Allergie à la pénicilline constatée en 2018.',
-  antecedentsFamiliaux: 'Hypertension paternelle.',
-  noteClinique:     'Patient très coopératif, mais présente une appréhension face aux aiguilles. Prévoir une anesthésie locale douce.',
-  dateCreation:     '14 Mars 2024',
-  lastUpdate:       'il y a 2 heures',
-}
 
 function SectionHeader({ icon, title, color = 'bg-indigo-50 text-indigo-500' }) {
   return (
@@ -29,7 +8,7 @@ function SectionHeader({ icon, title, color = 'bg-indigo-50 text-indigo-500' }) 
       <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${color}`}>
         {icon}
       </div>
-      <h2 className="text-lg font-bold text-gray-800">{title}</h2>
+      <h2 className="text-2xl font-black text-gray-900">{title}</h2>
     </div>
   )
 }
@@ -39,7 +18,7 @@ function FieldBox({ label, value, unit }) {
     <div className="flex flex-col gap-1.5">
       <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">{label}</label>
       <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-4 py-3">
-        <span className="text-sm text-gray-700 flex-1">{value}</span>
+        <span className="text-sm text-gray-700 flex-1">{value ?? '—'}</span>
         {unit && <span className="text-xs text-gray-400">{unit}</span>}
       </div>
     </div>
@@ -49,43 +28,149 @@ function FieldBox({ label, value, unit }) {
 export default function PatientDetails() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const [patient, setPatient] = useState(MOCK_PATIENT)
+  const [patient, setPatient] = useState(null)
+  const [editMode, setEditMode] = useState(false)
+  const [editForm, setEditForm] = useState(null)
+  const [saving, setSaving] = useState(false)
 
-  const imc = patient.poids && patient.taille
-    ? (patient.poids / Math.pow(patient.taille / 100, 2)).toFixed(1)
+  useEffect(() => {
+    fetch(`http://localhost:8000/api/v1/patients/${id}`)
+      .then(res => res.json())
+      .then(data => setPatient(data))
+      .catch((error) => {
+        console.error('Erreur de chargement patient', error)
+      })
+  }, [id])
+
+  useEffect(() => {
+    if (!patient) return
+    setEditForm({
+      chifa_card_number: patient.chifa_card_number || '',
+      first_name: patient.first_name || '',
+      last_name: patient.last_name || '',
+      date_of_birth: patient.date_of_birth
+        ? patient.date_of_birth.split?.('T')?.[0] || patient.date_of_birth
+        : '',
+      gender: patient.gender || '',
+      weight: patient.weight != null ? String(patient.weight) : '',
+      height: patient.height != null ? String(patient.height) : '',
+      marital_status: patient.marital_status || '',
+      number_of_children: patient.number_of_children != null ? String(patient.number_of_children) : '',
+      profession: patient.profession || '',
+      phone: patient.phone || '',
+      address: patient.address || '',
+      personal_history: patient.personal_history || '',
+      family_history: patient.family_history || '',
+      notes: patient.notes || '',
+      general_observation: patient.general_observation || '',
+    })
+  }, [patient])
+
+  const calculateAge = (dateString) => {
+    if (!dateString) return null
+    const birthDate = new Date(dateString)
+    if (Number.isNaN(birthDate.getTime())) return null
+    const ageDifMs = Date.now() - birthDate.getTime()
+    const ageDate = new Date(ageDifMs)
+    return Math.abs(ageDate.getUTCFullYear() - 1970)
+  }
+
+  const handleEditChange = (e) => {
+    const { name, value } = e.target
+    setEditForm((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const handleSavePatient = async () => {
+    if (!editForm) return
+    setSaving(true)
+    try {
+      const payload = {
+        chifa_card_number: editForm.chifa_card_number || null,
+        first_name: editForm.first_name || null,
+        last_name: editForm.last_name || null,
+        date_of_birth: editForm.date_of_birth || null,
+        gender: editForm.gender || null,
+        weight: editForm.weight ? parseFloat(editForm.weight) : null,
+        height: editForm.height ? parseFloat(editForm.height) : null,
+        marital_status: editForm.marital_status || null,
+        number_of_children: editForm.number_of_children
+          ? parseInt(editForm.number_of_children, 10)
+          : null,
+        profession: editForm.profession || null,
+        phone: editForm.phone || null,
+        address: editForm.address || null,
+        personal_history: editForm.personal_history || null,
+        family_history: editForm.family_history || null,
+        notes: editForm.notes || null,
+        general_observation: editForm.general_observation || null,
+      }
+
+      const response = await fetch(`http://localhost:8000/api/v1/patients/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      if (!response.ok) {
+        throw new Error('Impossible de mettre à jour le patient')
+      }
+
+      const updated = await response.json()
+      setPatient(updated)
+      setEditMode(false)
+      alert('Patient mis à jour avec succès.')
+    } catch (error) {
+      console.error('Erreur de mise à jour patient', error)
+      alert('Erreur lors de la sauvegarde. Vérifiez les informations et réessayez.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (!patient) return <div className="p-8 text-gray-400">Chargement...</div>
+
+  const imc = patient.weight && patient.height
+    ? (patient.weight / Math.pow(patient.height / 100, 2)).toFixed(1)
     : null
+
+  const age = calculateAge(patient.date_of_birth)
 
   return (
     <div className="flex flex-col gap-6">
 
       {/* Page header */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">
+          <h1 className="text-3xl font-black text-gray-900">
             Dossier Patient :{' '}
-            <span className="text-indigo-500">{patient.prenom} {patient.nom}</span>
+            <span className="text-indigo-500">{patient.first_name} {patient.last_name}</span>
           </h1>
           <p className="text-sm text-gray-400 mt-1">
-            Dernière mise à jour : {patient.lastUpdate}
+            Créé le : {patient.created_at ? new Date(patient.created_at).toLocaleDateString('fr-FR') : '—'}
           </p>
         </div>
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate(ROUTES.PATIENTS)}
-            className="px-6 py-2.5 rounded-full border border-gray-200 bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm font-medium transition-colors"
+            className="px-8 py-3.5 rounded-full border-2 border-gray-200 bg-gray-100 hover:bg-gray-200 text-gray-700 text-base font-bold transition-all shadow-sm"
           >
-            Annuler
+            Retour
           </button>
           <button
-            onClick={() => alert('Enregistré !')}
-            className="px-6 py-2.5 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors flex items-center gap-2"
+            onClick={() => setEditMode((prev) => !prev)}
+            className="px-6 py-3.5 rounded-full border border-indigo-200 bg-white text-indigo-700 text-base font-bold transition-all hover:bg-indigo-50 shadow-sm"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
-              <polyline points="17 21 17 13 7 13 7 21" />
-            </svg>
-            Enregistrer
+            {editMode ? 'Annuler' : 'Modifier le dossier'}
           </button>
+          {editMode && (
+            <button
+              onClick={handleSavePatient}
+              disabled={saving}
+              className="px-6 py-3.5 rounded-full bg-indigo-600 text-white text-base font-bold transition-all hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-indigo-400 shadow-sm"
+            >
+              {saving ? 'Enregistrement...' : 'Enregistrer'}
+            </button>
+          )}
         </div>
       </div>
 
@@ -107,10 +192,63 @@ export default function PatientDetails() {
               }
             />
             <div className="grid grid-cols-2 gap-4">
-              <FieldBox label="N° Carte Chifa" value={patient.carteChifa} />
-              <FieldBox label="Civilité"       value={patient.civilite}  />
-              <FieldBox label="Nom"            value={patient.nom}       />
-              <FieldBox label="Prénom"         value={patient.prenom}    />
+              {editMode ? (
+                <label className="block">
+                  <span className="text-sm font-semibold text-gray-700">N° Carte Chifa</span>
+                  <input
+                    name="chifa_card_number"
+                    value={editForm?.chifa_card_number}
+                    onChange={handleEditChange}
+                    className="mt-2 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-gray-900 outline-none focus:border-indigo-500"
+                  />
+                </label>
+              ) : (
+                <FieldBox label="N° Carte Chifa" value={patient.chifa_card_number} />
+              )}
+              {editMode ? (
+                <label className="block">
+                  <span className="text-sm font-semibold text-gray-700">Genre</span>
+                  <select
+                    name="gender"
+                    value={editForm?.gender}
+                    onChange={handleEditChange}
+                    className="mt-2 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-gray-900 outline-none focus:border-indigo-500"
+                  >
+                    <option value="">Sélectionner</option>
+                    <option value="male">Homme</option>
+                    <option value="female">Femme</option>
+                    <option value="other">Autre</option>
+                  </select>
+                </label>
+              ) : (
+                <FieldBox label="Genre" value={patient.gender} />
+              )}
+              {editMode ? (
+                <label className="block">
+                  <span className="text-sm font-semibold text-gray-700">Nom</span>
+                  <input
+                    name="last_name"
+                    value={editForm?.last_name}
+                    onChange={handleEditChange}
+                    className="mt-2 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-gray-900 outline-none focus:border-indigo-500"
+                  />
+                </label>
+              ) : (
+                <FieldBox label="Nom" value={patient.last_name} />
+              )}
+              {editMode ? (
+                <label className="block">
+                  <span className="text-sm font-semibold text-gray-700">Prénom</span>
+                  <input
+                    name="first_name"
+                    value={editForm?.first_name}
+                    onChange={handleEditChange}
+                    className="mt-2 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-gray-900 outline-none focus:border-indigo-500"
+                  />
+                </label>
+              ) : (
+                <FieldBox label="Prénom" value={patient.first_name} />
+              )}
             </div>
           </div>
 
@@ -126,15 +264,55 @@ export default function PatientDetails() {
                 </svg>
               }
             />
-            <div className="grid grid-cols-3 gap-4">
-              <FieldBox label="Âge"    value={patient.age}    unit="ans" />
-              <FieldBox label="Poids"  value={patient.poids}  unit="kg"  />
-              <FieldBox label="Taille" value={patient.taille} unit="cm"  />
-            </div>
+            {editMode ? (
+              <div className="grid grid-cols-2 gap-4">
+                <label className="block">
+                  <span className="text-sm font-semibold text-gray-700">Date de naissance</span>
+                  <input
+                    type="date"
+                    name="date_of_birth"
+                    value={editForm?.date_of_birth}
+                    onChange={handleEditChange}
+                    className="mt-2 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-gray-900 outline-none focus:border-indigo-500"
+                  />
+                </label>
+                <FieldBox label="Âge" value={age != null ? `${age} ans` : '—'} />
+                <label className="block">
+                  <span className="text-sm font-semibold text-gray-700">Poids</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    name="weight"
+                    value={editForm?.weight}
+                    onChange={handleEditChange}
+                    className="mt-2 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-gray-900 outline-none focus:border-indigo-500"
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-sm font-semibold text-gray-700">Taille</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    name="height"
+                    value={editForm?.height}
+                    onChange={handleEditChange}
+                    className="mt-2 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-gray-900 outline-none focus:border-indigo-500"
+                  />
+                </label>
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-4">
+                <FieldBox label="Âge" value={age != null ? `${age}` : patient.age} unit="ans" />
+                <FieldBox label="Poids" value={patient.weight} unit="kg" />
+                <FieldBox label="Taille" value={patient.height} unit="cm" />
+              </div>
+            )}
             {imc && (
-              <div className="mt-4 bg-cyan-50 border border-cyan-100 rounded-xl px-4 py-3 flex items-center justify-between">
-                <span className="text-xs font-bold text-cyan-600 uppercase tracking-widest">IMC Calculé</span>
-                <span className="text-lg font-bold text-cyan-700">{imc}</span>
+              <div className="mt-5 bg-cyan-50 border-2 border-cyan-100 rounded-2xl px-6 py-5 flex items-center justify-between shadow-sm">
+                <span className="text-sm font-black text-cyan-600 uppercase tracking-widest">IMC Calculé</span>
+                <span className="text-3xl font-black text-cyan-700">{imc}</span>
               </div>
             )}
           </div>
@@ -153,21 +331,41 @@ export default function PatientDetails() {
               }
             />
             <div className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+              <div className="flex flex-col gap-3">
+                <label className="text-sm font-black text-gray-500 uppercase tracking-widest">
                   Antécédents Personnels
                 </label>
-                <div className="bg-gray-50 rounded-xl px-4 py-3 text-sm text-gray-700 min-h-16">
-                  {patient.antecedentsPerso}
-                </div>
+                {editMode ? (
+                  <textarea
+                    name="personal_history"
+                    value={editForm?.personal_history}
+                    onChange={handleEditChange}
+                    rows={4}
+                    className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 outline-none focus:border-indigo-500"
+                  />
+                ) : (
+                  <div className="bg-gray-50 rounded-xl px-4 py-3 text-sm text-gray-700 min-h-16">
+                    {patient.personal_history ?? '—'}
+                  </div>
+                )}
               </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+              <div className="flex flex-col gap-3">
+                <label className="text-sm font-black text-gray-500 uppercase tracking-widest">
                   Antécédents Familiaux
                 </label>
-                <div className="bg-gray-50 rounded-xl px-4 py-3 text-sm text-gray-700 min-h-16">
-                  {patient.antecedentsFamiliaux}
-                </div>
+                {editMode ? (
+                  <textarea
+                    name="family_history"
+                    value={editForm?.family_history}
+                    onChange={handleEditChange}
+                    rows={4}
+                    className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 outline-none focus:border-indigo-500"
+                  />
+                ) : (
+                  <div className="bg-gray-50 rounded-xl px-4 py-3 text-sm text-gray-700 min-h-16">
+                    {patient.family_history ?? '—'}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -190,9 +388,45 @@ export default function PatientDetails() {
               }
             />
             <div className="flex flex-col gap-4">
-              <FieldBox label="Sit. Familiale" value={patient.sitFamiliale} />
-              <FieldBox label="NB Enfants"     value={patient.nbEnfants}    />
-              <FieldBox label="Profession"     value={patient.profession}   />
+              {editMode ? (
+                <>
+                  <label className="block">
+                    <span className="text-sm font-semibold text-gray-700">Sit. Familiale</span>
+                    <input
+                      name="marital_status"
+                      value={editForm?.marital_status}
+                      onChange={handleEditChange}
+                      className="mt-2 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-gray-900 outline-none focus:border-indigo-500"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="text-sm font-semibold text-gray-700">NB Enfants</span>
+                    <input
+                      type="number"
+                      min="0"
+                      name="number_of_children"
+                      value={editForm?.number_of_children}
+                      onChange={handleEditChange}
+                      className="mt-2 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-gray-900 outline-none focus:border-indigo-500"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="text-sm font-semibold text-gray-700">Profession</span>
+                    <input
+                      name="profession"
+                      value={editForm?.profession}
+                      onChange={handleEditChange}
+                      className="mt-2 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-gray-900 outline-none focus:border-indigo-500"
+                    />
+                  </label>
+                </>
+              ) : (
+                <>
+                  <FieldBox label="Sit. Familiale" value={patient.marital_status} />
+                  <FieldBox label="NB Enfants" value={patient.number_of_children} />
+                  <FieldBox label="Profession" value={patient.profession} />
+                </>
+              )}
             </div>
           </div>
 
@@ -211,18 +445,36 @@ export default function PatientDetails() {
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Téléphone</label>
-                <div className="flex items-center gap-3 bg-gray-50 rounded-xl px-4 py-3">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="1.8">
-                    <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 013 1.18 2 2 0 014.18 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z" />
-                  </svg>
-                  <span className="text-sm text-gray-700">{patient.telephone}</span>
-                </div>
+                {editMode ? (
+                  <input
+                    name="phone"
+                    value={editForm?.phone}
+                    onChange={handleEditChange}
+                    className="mt-2 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 outline-none focus:border-indigo-500"
+                  />
+                ) : (
+                  <div className="flex items-center gap-3 bg-gray-50 rounded-xl px-4 py-3">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="1.8">
+                      <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 013 1.18 2 2 0 014.18 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z" />
+                    </svg>
+                    <span className="text-sm text-gray-700">{patient.phone ?? '—'}</span>
+                  </div>
+                )}
               </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Adresse</label>
-                <div className="bg-gray-50 rounded-xl px-4 py-3 text-sm text-gray-700">
-                  {patient.adresse}
-                </div>
+                {editMode ? (
+                  <input
+                    name="address"
+                    value={editForm?.address}
+                    onChange={handleEditChange}
+                    className="mt-2 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 outline-none focus:border-indigo-500"
+                  />
+                ) : (
+                  <div className="bg-gray-50 rounded-xl px-4 py-3 text-sm text-gray-700">
+                    {patient.address ?? '—'}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -242,9 +494,45 @@ export default function PatientDetails() {
             <p className="text-xs text-gray-400 mb-3">
               Ces notes sont visibles uniquement par le personnel médical autorisé.
             </p>
-            <div className="bg-gray-50 rounded-xl px-4 py-3 text-sm text-gray-700 leading-relaxed">
-              {patient.noteClinique}
-            </div>
+            {editMode ? (
+              <textarea
+                name="notes"
+                value={editForm?.notes}
+                onChange={handleEditChange}
+                rows={6}
+                className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 outline-none focus:border-indigo-500"
+              />
+            ) : (
+              <div className="bg-gray-50 rounded-xl px-4 py-3 text-sm text-gray-700 leading-relaxed">
+                {patient.notes ?? '—'}
+              </div>
+            )}
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-100 p-6">
+            <SectionHeader
+              title="Observations Générales"
+              color="bg-gray-50 text-gray-600"
+              icon={
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <path d="M4 4h16v4H4z" />
+                  <path d="M4 12h16v8H4z" />
+                </svg>
+              }
+            />
+            {editMode ? (
+              <textarea
+                name="general_observation"
+                value={editForm?.general_observation}
+                onChange={handleEditChange}
+                rows={4}
+                className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 outline-none focus:border-indigo-500"
+              />
+            ) : (
+              <div className="bg-gray-50 rounded-xl px-4 py-3 text-sm text-gray-700 leading-relaxed min-h-[80px]">
+                {patient.general_observation ?? '—'}
+              </div>
+            )}
           </div>
 
         </div>
@@ -254,7 +542,9 @@ export default function PatientDetails() {
       <div className="flex items-center justify-between pt-2 pb-4 border-t border-gray-100">
         <div className="flex items-center gap-6 text-xs text-gray-400">
           <span>ID Dossier : <span className="font-bold text-gray-600">{patient.id}</span></span>
-          <span>Date de création : <span className="font-medium">{patient.dateCreation}</span></span>
+          <span>Date de création : <span className="font-medium">
+            {patient.created_at ? new Date(patient.created_at).toLocaleDateString('fr-FR') : '—'}
+          </span></span>
         </div>
         <div className="flex items-center gap-2 text-xs text-gray-400">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">

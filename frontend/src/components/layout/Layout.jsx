@@ -4,7 +4,7 @@ import { Outlet } from 'react-router-dom'
 
 export default function Layout() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 text-gray-900 transition-colors">
       <Sidebar />
       <Header />
       <main className="ml-52 pt-16 min-h-screen">

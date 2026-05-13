@@ -8,6 +8,14 @@ import App from './app/App.jsx'
 
 const queryClient = new QueryClient()
 
+document.documentElement.style.fontSize = localStorage.getItem('app-font-size') === 'sm'
+  ? '14px'
+  : localStorage.getItem('app-font-size') === 'lg'
+    ? '18px'
+    : localStorage.getItem('app-font-size') === 'xl'
+      ? '20px'
+      : '16px'
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>

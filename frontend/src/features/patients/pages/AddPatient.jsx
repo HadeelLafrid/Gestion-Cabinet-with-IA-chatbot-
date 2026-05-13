@@ -5,11 +5,11 @@ import Step1PersonalInfo from '../components/PatientForm/Step1PersonalInfo'
 import Step2Medical from '../components/PatientForm/Step2Medical'
 import Step3Documents from '../components/PatientForm/Step3Documents'
 
+
 const steps = [
   { id: 1, label: 'Informations Personnelles', sub: 'Identité et contact'          },
   { id: 2, label: 'Consultation & Médical',    sub: 'Paramètres et antécédents'    },
-  { id: 3, label: 'Documents & Notes',         sub: 'Pièces jointes et observations'},
-  { id: 4, label: 'Première Consultation',     sub: 'Motif, diagnostic, traitement' },
+  { id: 3, label: 'Documents & Notes',         sub: 'Pièces jointes et observations'}
 ]
 
 export default function AddPatient() {
@@ -18,7 +18,7 @@ export default function AddPatient() {
   const [form, setForm] = useState({
   // Step 1
   carteChifa: '', civilite: 'Mr', nom: '', prenom: '',
-  ageAns: '', ageMois: '', profession: '', sitFamiliale: 'Célibataire',
+  date_of_birth: '', profession: '', sitFamiliale: 'Célibataire',
   nbEnfants: '0', telephone: '', adresse: '',
   // Step 2
   poids: '', taille: '', antecedentsPerso: '', antecedentsFamiliaux: '', notes: '',
@@ -35,15 +35,41 @@ export default function AddPatient() {
     ? (parseFloat(form.poids) / Math.pow(parseFloat(form.taille) / 100, 2)).toFixed(1)
     : null
 
-  const handleSave = () => {
-    console.log('Patient data:', form)
-    navigate(ROUTES.PATIENTS)
+  const handleSave = async () => {
+  const response = await fetch('http://localhost:8000/api/v1/patients/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      chifa_card_number: form.carteChifa || null,
+      first_name:        form.prenom || null,   // ← prenom → first_name
+      last_name:         form.nom || null,       // ← nom → last_name
+      date_of_birth:     form.date_of_birth || null,
+      gender:            form.civilite === 'Mr' ? 'male' : 'female',
+      marital_status:    form.sitFamiliale || null,
+      profession:        form.profession || null,
+      phone:             form.telephone || null,
+      address:           form.adresse || null,
+      weight:            parseFloat(form.poids) || null,
+      height:            parseFloat(form.taille) || null,
+      personal_history:  form.antecedentsPerso || null,
+      family_history:    form.antecedentsFamiliaux || null,
+      notes:             form.notes || null,
+      general_observation: form.observations || null,
+    })
+  })
+
+  if (response.ok) {
+    const data = await response.json();
+    navigate(`/consultation/${data.id}`)
+  } else {
+    alert('Erreur lors de la création du patient')
   }
+}
 
  const handleReset = () => {
   setForm({
     carteChifa: '', civilite: 'Mr', nom: '', prenom: '',
-    ageAns: '', ageMois: '', profession: '', sitFamiliale: 'Célibataire',
+    date_of_birth: '', profession: '', sitFamiliale: 'Célibataire',
     nbEnfants: '0', telephone: '', adresse: '',
     poids: '', taille: '', antecedentsPerso: '', antecedentsFamiliaux: '', notes: '',
     documents: [], observations: '',
@@ -147,9 +173,6 @@ export default function AddPatient() {
             {currentStep === 3 && (
               <Step3Documents form={form} updateForm={updateForm} />
             )}
-            {currentStep === 4 && (
-  <Step4Consultation form={form} updateForm={updateForm} />
-)}
           </div>
 
           {/* Bottom action buttons */}
@@ -187,7 +210,7 @@ export default function AddPatient() {
                   <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
                   <polyline points="17 21 17 13 7 13 7 21" />
                 </svg>
-                Enregistrer
+                Enregistrer et démarrer la consultation
               </button>
             )}
           </div>
