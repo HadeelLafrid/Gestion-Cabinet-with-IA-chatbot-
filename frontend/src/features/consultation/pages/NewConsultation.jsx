@@ -7,67 +7,6 @@ import {
 import apiClient from "../../../services/apiClient";
 import VoiceInputButton from "../../../components/VoiceInputButton";
 
-
-const MOCK_PATIENTS = {
-  "PT-4401": {
-    name: "Lafrid hadil",
-    id: "4401-X",
-    age: "42 ans",
-    genre: "Femme",
-  },
-  "PT-4402": {
-    name: "Jean Dupont",
-    id: "4402-X",
-    age: "31 ans",
-    genre: "Homme",
-  },
-  "PT-4403": {
-    name: "Robert Martin",
-    id: "4403-X",
-    age: "68 ans",
-    genre: "Homme",
-  },
-  "PT-4404": {
-    name: "Alice Dubois",
-    id: "4404-X",
-    age: "25 ans",
-    genre: "Femme",
-  },
-  "PT-4405": {
-    name: "Sophie Girard",
-    id: "4405-X",
-    age: "54 ans",
-    genre: "Femme",
-  },
-  "PT-4406": {
-    name: "Pierre Bernard",
-    id: "4406-X",
-    age: "47 ans",
-    genre: "Homme",
-  },
-  "PT-4407": {
-    name: "Karim Benali",
-    id: "4407-X",
-    age: "38 ans",
-    genre: "Homme",
-  },
-};
-
-const MOCK_MEDICATIONS = [
-  {
-    id: 1,
-    name: "Lisinopril 10mg",
-    instruction: "1 comprimé par jour - Le matin",
-    icon: "pill",
-  },
-  {
-    id: 2,
-    name: "Bilan sanguin complet",
-    instruction: "À réaliser sous 72h à jeun",
-    icon: "lab",
-  },
-];
-
 export default function NewConsultation() {
   const { patientId } = useParams();
   const navigate = useNavigate();
@@ -76,14 +15,10 @@ export default function NewConsultation() {
   const editId = searchParams.get('edit');
 
   // find id of the patient
-  const patientKey = patientId?.startsWith("PT-")
-    ? patientId
-    : `PT-${patientId}`;
-  const initialPatient = MOCK_PATIENTS[patientKey] || MOCK_PATIENTS["PT-4402"];
   const panelRef = useRef(null);
   const draftHistoryKey = `assistant_chat_draft_${patientId || "unknown"}`;
 
-  const [patient, setPatient] = useState(initialPatient);
+  const [patient, setPatient] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

@@ -1,54 +1,108 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-
-const MOCK_PAYMENTS = {
-  '2024-10-12': {
-    total: 4000,
-    previousDay: 3570,
-    consultations: 8,
-    maxSlots: 10,
-    payments: [
-      { id: 'RX-8920', patient: 'lafrid hadil', initials: 'BM', color: 'bg-blue-200 text-blue-700',   address: 'Cité des Oliviers, Alger', datetime: '14/10/2023 • 09:15', montant: 500  },
-      { id: 'RX-8921', patient: 'Lakhdar Karima',    initials: 'LK', color: 'bg-cyan-200 text-cyan-700',   address: 'Rue Didouche Mourad, Alger', datetime: '14/10/2023 • 10:00', montant: 500  },
-      { id: 'RX-8922', patient: 'Amrani Sofiane',    initials: 'AS', color: 'bg-green-200 text-green-700', address: 'Hydra - Les Pins, Alger', datetime: '14/10/2023 • 10:45', montant: 500  },
-      { id: 'RX-8923', patient: 'Hadj-Baba Meriem',  initials: 'HM', color: 'bg-pink-200 text-pink-700',   address: 'Bir Mourad Raïs, Alger', datetime: '14/10/2023 • 11:30', montant: 500  },
-      { id: 'RX-8924', patient: 'Benaïssa Omar',     initials: 'BO', color: 'bg-amber-200 text-amber-700', address: 'El Biar, Alger', datetime: '14/10/2023 • 14:00', montant: 500  },
-      { id: 'RX-8925', patient: 'Ferhat Nadia',      initials: 'FN', color: 'bg-purple-200 text-purple-700',address: 'Kouba, Alger', datetime: '14/10/2023 • 14:45', montant: 500  },
-      { id: 'RX-8926', patient: 'Chikhi Riad',       initials: 'CR', color: 'bg-teal-200 text-teal-700',   address: 'Ben Aknoun, Alger', datetime: '14/10/2023 • 15:30', montant: 500  },
-      { id: 'RX-8927', patient: 'Mebarki Assia',     initials: 'MA', color: 'bg-red-200 text-red-700',     address: 'Dély Ibrahim, Alger', datetime: '14/10/2023 • 16:15', montant: 500  },
-    ],
-  },
-  '2023-10-13': {
-    total: 3570,
-    previousDay: 3200,
-    consultations: 6,
-    maxSlots: 10,
-    payments: [
-      { id: 'RX-8910', patient: 'Saïdi Mourad',   initials: 'SM', color: 'bg-indigo-200 text-indigo-700', address: 'Hussein Dey, Alger', datetime: '13/10/2023 • 09:00', montant: 600  },
-      { id: 'RX-8911', patient: 'Yelles Faïza',   initials: 'YF', color: 'bg-pink-200 text-pink-700',    address: 'Bab Ezzouar, Alger', datetime: '13/10/2023 • 10:00', montant: 595  },
-      { id: 'RX-8912', patient: 'Tlemçani Ali',   initials: 'TA', color: 'bg-green-200 text-green-700',  address: 'Saoula, Alger', datetime: '13/10/2023 • 11:00', montant: 595  },
-      { id: 'RX-8913', patient: 'Kaci Lynda',     initials: 'KL', color: 'bg-cyan-200 text-cyan-700',    address: 'Cheraga, Alger', datetime: '13/10/2023 • 14:00', montant: 595  },
-      { id: 'RX-8914', patient: 'Bouras Djamel',  initials: 'BD', color: 'bg-amber-200 text-amber-700',  address: 'Ouled Fayet, Alger', datetime: '13/10/2023 • 15:00', montant: 595  },
-      { id: 'RX-8915', patient: 'Rezaïg Widad',   initials: 'RW', color: 'bg-purple-200 text-purple-700',address: 'Zeralda, Alger', datetime: '13/10/2023 • 16:00', montant: 590  },
-    ],
-  },
-}
+import apiClient from '../../../services/apiClient'
 
 const ITEMS_PER_PAGE = 4
+const MAX_SLOTS = 10
+
+function toDateKey(value) {
+  if (!value) return ''
+  return new Date(value).toISOString().slice(0, 10)
+}
 
 export default function PaymentsPage() {
-  const navigate     = useNavigate()
-  const [mode,       setMode]       = useState('jour')   // 'jour' | 'periode'
-  const [date,       setDate]       = useState('')
-  const [dateFrom,   setDateFrom]   = useState('')
-  const [dateTo,     setDateTo]     = useState('')
-  const [searched,   setSearched]   = useState(false)
-  const [page,       setPage]       = useState(1)
+  const navigate = useNavigate()
+  const [mode, setMode] = useState('jour')   // 'jour' | 'periode'
+  const [date, setDate] = useState('')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+  const [searched, setSearched] = useState(false)
+  const [page, setPage] = useState(1)
+  const [loading, setLoading] = useState(false)
+  const [paymentsData, setPaymentsData] = useState(null)
 
-  const handleSearch = () => {
-    if (mode === 'jour' && date) setSearched(true)
-    if (mode === 'periode' && dateFrom && dateTo) setSearched(true)
+  const handleSearch = async () => {
+    if (mode === 'jour' && !date) return
+    if (mode === 'periode' && (!dateFrom || !dateTo)) return
+
+    setSearched(true)
+    setLoading(true)
     setPage(1)
+
+    try {
+      const consultationsResponse = await apiClient.get('/consultations', {
+        params: { limit: 1000 },
+      })
+      const consultations = consultationsResponse.data || []
+
+      const details = await Promise.all(
+        consultations.map(async (consultation) => {
+          try {
+            const response = await apiClient.get(`/consultations/${consultation.id}`)
+            const data = response.data || {}
+            const patient = data.patient || consultation.patient || {}
+            const payment = data.payment || null
+            if (!payment || payment.amount == null) return null
+
+            const consultationDate = data.consultation_date || consultation.consultation_date
+            const dateValue = consultationDate ? new Date(consultationDate) : null
+            const patientName = `${patient.first_name || ''} ${patient.last_name || ''}`.trim() || 'Patient inconnu'
+
+            return {
+              id: data.id || consultation.id,
+              patient: patientName,
+              initials: `${patient.first_name?.[0] || ''}${patient.last_name?.[0] || ''}`.toUpperCase() || 'P',
+              color: getAvatarColor(patient.first_name || patient.last_name || String(patient.id || consultation.id)),
+              address: patient.address || '—',
+              datetime: dateValue
+                ? `${dateValue.toLocaleDateString('fr-FR')} • ${dateValue.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`
+                : '—',
+              montant: Number(payment.amount) || 0,
+              dateKey: toDateKey(consultationDate),
+            }
+          } catch (error) {
+            console.warn('Unable to load consultation detail', error)
+            return null
+          }
+        })
+      )
+
+      const records = details.filter(Boolean)
+      const dateKey = mode === 'jour' ? date : null
+      const filteredPayments = mode === 'jour'
+        ? records.filter((entry) => entry.dateKey === dateKey)
+        : records.filter((entry) => entry.dateKey >= dateFrom && entry.dateKey <= dateTo)
+
+      const countConsultations = mode === 'jour'
+        ? consultations.filter((consultation) => toDateKey(consultation.consultation_date) === date).length
+        : consultations.filter((consultation) => {
+            const key = toDateKey(consultation.consultation_date)
+            return key >= dateFrom && key <= dateTo
+          }).length
+
+      let previousDay = null
+      if (mode === 'jour') {
+        const previousDate = new Date(`${date}T00:00:00`)
+        previousDate.setDate(previousDate.getDate() - 1)
+        const previousDateKey = previousDate.toISOString().slice(0, 10)
+        previousDay = records
+          .filter((entry) => entry.dateKey === previousDateKey)
+          .reduce((sum, entry) => sum + entry.montant, 0)
+      }
+
+      setPaymentsData({
+        total: filteredPayments.reduce((sum, entry) => sum + entry.montant, 0),
+        previousDay,
+        consultations: countConsultations,
+        maxSlots: MAX_SLOTS,
+        payments: filteredPayments,
+      })
+    } catch (error) {
+      console.error('Error loading payments data', error)
+      setPaymentsData(null)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleModify = () => {
@@ -57,28 +111,16 @@ export default function PaymentsPage() {
     setDateFrom('')
     setDateTo('')
     setPage(1)
+    setPaymentsData(null)
   }
 
-  // Get data for selected date
-  const data = searched && mode === 'jour'
-    ? MOCK_PAYMENTS[date] || null
-    : null
+  const data = searched && mode === 'jour' ? paymentsData : null
 
-  // For period mode — aggregate all days in range
-  const periodData = searched && mode === 'periode'
-    ? Object.entries(MOCK_PAYMENTS)
-        .filter(([d]) => d >= dateFrom && d <= dateTo)
-        .reduce((acc, [, val]) => {
-          acc.total        += val.total
-          acc.consultations += val.consultations
-          acc.payments      = [...acc.payments, ...val.payments]
-          return acc
-        }, { total: 0, consultations: 0, payments: [] })
-    : null
+  const periodData = searched && mode === 'periode' ? paymentsData : null
 
   const activeData = mode === 'jour' ? data : periodData
 
-  const growth = data
+  const growth = data && data.previousDay
     ? Math.round(((data.total - data.previousDay) / data.previousDay) * 100)
     : null
 
@@ -269,7 +311,14 @@ export default function PaymentsPage() {
             </div>
 
             {/* No data state */}
-            {!activeData || activeData.payments.length === 0 ? (
+            {loading ? (
+              <div className="bg-white rounded-2xl border border-gray-100 p-20 flex flex-col items-center gap-4">
+                <div className="w-14 h-14 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-300">
+                  <div className="w-6 h-6 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+                </div>
+                <p className="text-gray-500 font-medium">Chargement des paiements...</p>
+              </div>
+            ) : !activeData || activeData.payments.length === 0 ? (
               <div className="bg-white rounded-2xl border border-gray-100 p-20 flex flex-col items-center gap-4">
                 <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center text-gray-300">
                   <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -317,7 +366,7 @@ export default function PaymentsPage() {
                         </span>
                       )}
                     </div>
-                    {data?.previousDay && (
+                    {data?.previousDay != null && (
                       <p className="text-xs text-gray-400 mt-2">
                         Par rapport à la journée d'hier ({data.previousDay.toLocaleString('fr-FR')} DA)
                       </p>
@@ -347,7 +396,7 @@ export default function PaymentsPage() {
                       {String(activeData.consultations).padStart(2, '0')}
                       <span className="text-base font-normal text-gray-400 ml-2">Consultations</span>
                     </p>
-                    {data && (
+                      {data && (
                       <>
                         <div className="mt-3 flex items-center justify-between text-xs text-gray-400 mb-1">
                           <span>Flux quotidien</span>
@@ -379,7 +428,7 @@ export default function PaymentsPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {pagedPayments.map((p, i) => (
+                      {pagedPayments.map((p) => (
                         <tr key={p.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
