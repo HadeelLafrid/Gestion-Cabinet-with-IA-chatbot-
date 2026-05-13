@@ -1,9 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import {
-  COMMON_MEDICINES,
-  MEDICINE_CATEGORIES,
-} from "../../../constants/medicines";
+
 import apiClient from "../../../services/apiClient";
 import VoiceInputButton from "../../../components/VoiceInputButton";
 
@@ -165,7 +162,7 @@ export default function NewConsultation() {
     instruction: "",
     icon: "pill",
   });
-  const [selectedCategory, setSelectedCategory] = useState("");
+
 
   const [showResumeModal, setShowResumeModal] = useState(false);
   const [isGeneratingResume, setIsGeneratingResume] = useState(false);
@@ -1071,82 +1068,6 @@ export default function NewConsultation() {
                 <div className="flex flex-col gap-4">
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs font-medium text-gray-500">
-                      Filtrer par catégorie
-                    </label>
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        onClick={() => setSelectedCategory("")}
-                        className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-colors
-                          ${
-                            selectedCategory === ""
-                              ? "bg-indigo-600 border-indigo-600 text-white"
-                              : "bg-white border-gray-200 text-gray-500 hover:border-indigo-300"
-                          }`}
-                      >
-                        Tous
-                      </button>
-                      {MEDICINE_CATEGORIES.map((cat) => (
-                        <button
-                          key={cat}
-                          onClick={() => setSelectedCategory(cat)}
-                          className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-colors
-                            ${
-                              selectedCategory === cat
-                                ? "bg-indigo-600 border-indigo-600 text-white"
-                                : "bg-white border-gray-200 text-gray-500 hover:border-indigo-300"
-                            }`}
-                        >
-                          {cat}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-medium text-gray-500">
-                      Sélectionner depuis la liste
-                    </label>
-                    <select
-                      onChange={(e) => {
-                        const selected = COMMON_MEDICINES.find(
-                          (m) => m.name === e.target.value,
-                        );
-                        if (selected) {
-                          setNewMed((prev) => ({
-                            ...prev,
-                            name: selected.name,
-                            icon: selected.icon,
-                            instruction: "",
-                          }));
-                        }
-                      }}
-                      className="bg-white border border-indigo-200 rounded-xl px-4 py-3 text-sm text-gray-700 outline-none focus:border-indigo-400 transition-colors cursor-pointer"
-                    >
-                      <option value="">
-                        — Choisir un médicament courant —
-                      </option>
-                      {COMMON_MEDICINES.filter(
-                        (m) =>
-                          selectedCategory === "" ||
-                          m.category === selectedCategory,
-                      ).map((m) => (
-                        <option key={m.name} value={m.name}>
-                          {m.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 h-px bg-indigo-200" />
-                    <span className="text-xs text-indigo-400 font-medium">
-                      ou saisir manuellement
-                    </span>
-                    <div className="flex-1 h-px bg-indigo-200" />
-                  </div>
-
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-medium text-gray-500">
                       Nom du médicament / examen{" "}
                       <span className="text-red-400">*</span>
                     </label>
@@ -1189,8 +1110,8 @@ export default function NewConsultation() {
                     </label>
                     <div className="flex items-center gap-3">
                       {[
-                        { value: "pill", label: "Médicament", emoji: "💊" },
-                        { value: "lab", label: "Examen / Labo", emoji: "🔬" },
+                        { value: "pill", label: "Médicament" },
+                        { value: "lab", label: "Examen / Labo" },
                       ].map((t) => (
                         <button
                           key={t.value}
@@ -1205,7 +1126,6 @@ export default function NewConsultation() {
                                 : "bg-white border-gray-200 text-gray-600 hover:border-indigo-300"
                             }`}
                         >
-                          <span style={{ fontSize: 14 }}>{t.emoji}</span>
                           {t.label}
                         </button>
                       ))}
@@ -1579,9 +1499,17 @@ export default function NewConsultation() {
                                       await syncHistoryToDb(updated);
                                     }}
                                     className="text-red-600 hover:text-red-800 text-lg"
-                                    title="Supprimer"
                                   >
-                                    🗑️
+                                    <svg
+                                      width="16"
+                                      height="16"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth="2"
+                                    >
+                                      <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" />
+                                    </svg>
                                   </button>
                                 </div>
                               )}
