@@ -45,6 +45,11 @@ echo [2/3] Lancement du Backend...
 start /D "%PROJECT_ROOT%backend" /B python server.py
 
 echo [3/3] Lancement du Frontend...
+if not exist "%PROJECT_ROOT%frontend\node_modules" (
+    echo Installation des dependances frontend...
+    cd /D "%PROJECT_ROOT%frontend"
+    call npm install
+)
 start /D "%PROJECT_ROOT%frontend" /B npm run dev
 
 echo.
