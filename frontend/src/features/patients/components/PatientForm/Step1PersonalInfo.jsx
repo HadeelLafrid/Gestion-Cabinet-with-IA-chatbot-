@@ -51,7 +51,7 @@ export default function Step1PersonalInfo({ form, updateForm }) {
           </div>
         </div>
 
-        {/* Nom + Prénom + Age */}
+        {/* Nom + Prénom + Date de naissance */}
         <div className="grid grid-cols-3 gap-4">
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-bold text-gray-500 tracking-widest uppercase">
@@ -83,35 +83,15 @@ export default function Step1PersonalInfo({ form, updateForm }) {
 
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-bold text-gray-500 tracking-widest uppercase">
-              Age (*)
+              Date de naissance (*)
             </label>
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-3 flex-1">
-                <input
-                  type="number"
-                  name="ageAns"
-                  value={form.ageAns}
-                  onChange={handle}
-                  placeholder="Ans"
-                  min="0"
-                  className="w-full bg-transparent text-sm text-gray-600 placeholder-gray-300 outline-none"
-                />
-                <span className="text-xs text-gray-400">ans</span>
-              </div>
-              <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-3 flex-1">
-                <input
-                  type="number"
-                  name="ageMois"
-                  value={form.ageMois}
-                  onChange={handle}
-                  placeholder="Mois"
-                  min="0"
-                  max="11"
-                  className="w-full bg-transparent text-sm text-gray-600 placeholder-gray-300 outline-none"
-                />
-                <span className="text-xs text-gray-400">mois</span>
-              </div>
-            </div>
+            <input
+              type="date"
+              name="date_of_birth"
+              value={form.date_of_birth}
+              onChange={handle}
+              className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-600 outline-none focus:border-indigo-400 transition-colors"
+            />
           </div>
         </div>
 

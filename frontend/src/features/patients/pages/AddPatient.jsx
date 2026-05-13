@@ -19,7 +19,7 @@ export default function AddPatient() {
   const [form, setForm] = useState({
   // Step 1
   carteChifa: '', civilite: 'Mr', nom: '', prenom: '',
-  ageAns: '', ageMois: '', profession: '', sitFamiliale: 'Célibataire',
+  date_of_birth: '', profession: '', sitFamiliale: 'Célibataire',
   nbEnfants: '0', telephone: '', adresse: '',
   // Step 2
   poids: '', taille: '', antecedentsPerso: '', antecedentsFamiliaux: '', notes: '',
@@ -44,6 +44,7 @@ export default function AddPatient() {
       chifa_card_number: form.carteChifa || null,
       first_name:        form.prenom || null,   // ← prenom → first_name
       last_name:         form.nom || null,       // ← nom → last_name
+      date_of_birth:     form.date_of_birth || null,
       gender:            form.civilite === 'Mr' ? 'male' : 'female',
       marital_status:    form.sitFamiliale || null,
       profession:        form.profession || null,
@@ -69,7 +70,7 @@ export default function AddPatient() {
  const handleReset = () => {
   setForm({
     carteChifa: '', civilite: 'Mr', nom: '', prenom: '',
-    ageAns: '', ageMois: '', profession: '', sitFamiliale: 'Célibataire',
+    date_of_birth: '', profession: '', sitFamiliale: 'Célibataire',
     nbEnfants: '0', telephone: '', adresse: '',
     poids: '', taille: '', antecedentsPerso: '', antecedentsFamiliaux: '', notes: '',
     documents: [], observations: '',
